@@ -2,7 +2,6 @@ package club.minnced.jda.reactor
 
 import net.dv8tion.jda.api.requests.RestAction
 import net.dv8tion.jda.api.requests.restaction.pagination.PaginationAction
-import net.dv8tion.jda.internal.requests.restaction.pagination.MessagePaginationActionImpl
 import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
 import reactor.core.publisher.Mono
@@ -29,10 +28,3 @@ fun <T, M> PaginationAction<T, M>.asFlux(overflowStrategy: FluxSink.OverflowStra
         }
     }
 }, overflowStrategy)
-
-fun main() {
-    val action = MessagePaginationActionImpl(null)
-    action.asFlux()
-            .map { "${it.author.asTag}: ${it.contentDisplay}" }
-            .subscribe { println(it) }
-}
