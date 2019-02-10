@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "club.minnced"
-version = "0.1.0"
+version = "0.1.1"
 
 repositories {
     jcenter()
@@ -69,6 +69,7 @@ bintray {
         githubRepo = "minndevelopment/jda-reactor"
         issueTrackerUrl = "$vcsUrl/issues"
         websiteUrl = vcsUrl
+        desc = "A collection of kotlin extensions for JDA that make use with reactor-core easier."
         setLabels("reactive", "jda", "discord", "kotlin")
         name = project.name
         publish = true
