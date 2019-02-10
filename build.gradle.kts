@@ -59,7 +59,6 @@ publishing {
 }
 
 bintray {
-    override = true
     setPublications("BintrayRelease")
     user = properties["bintrayName"] as? String ?: ""
     key  = properties["bintrayKey"] as? String ?: ""
@@ -67,6 +66,10 @@ bintray {
         setLicenses("Apache-2.0")
         repo = "maven"
         vcsUrl = "https://github.com/MinnDevelopment/jda-reactor"
+        githubRepo = "minndevelopment/jda-reactor"
+        issueTrackerUrl = "$vcsUrl/issues"
+        websiteUrl = vcsUrl
+        setLabels("reactive", "jda", "discord", "kotlin")
         name = project.name
         publish = true
         publicDownloadNumbers = true
