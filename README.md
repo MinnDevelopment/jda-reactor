@@ -53,6 +53,10 @@ fun main() {
            .map { it.channel }
            .map { it.sendMessage("Pong!") }
            .subscribe { it.queue() }
+
+   JDABuilder(BOT_TOKEN)
+        .setEventManager(manager)
+        .build()
 }
 ```
 
