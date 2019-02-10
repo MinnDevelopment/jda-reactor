@@ -65,7 +65,7 @@ fun main() {
 ```kotlin
 fun getMessagesForUser(channel: MessageChannel, user: User): Flux<Message> {
     val action = channel.iterableHistory
-    return action.asFlux().filter { it.user == user }
+    return action.asFlux().filter { it.author == user }
 }
 ```
 
