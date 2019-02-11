@@ -21,26 +21,44 @@ import net.dv8tion.jda.api.requests.restaction.pagination.PaginationAction
 import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
 import reactor.core.publisher.Mono
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 fun <T> RestAction<T>.asMono() = Mono.fromFuture(this::submit)
 
-fun <T, M> PaginationAction<T, M>.asFlux(overflowStrategy: FluxSink.OverflowStrategy = FluxSink.OverflowStrategy.BUFFER): Flux<T>
+fun <T, M> PaginationAction<T, M>.asFlux(overflowStrategy: FluxSink.OverflowStrategy = FluxSink.OverflowStrategy.LATEST): Flux<T>
     where M : PaginationAction<T, M> = Flux.create<T>({ sink ->
     cache(false)
+    var task = CompletableFuture.completedFuture<Void>(null)
+    val remaining = AtomicLong(0L)
+    val lock = ReentrantLock()
+    var cancelled = false
+
+    sink.onCancel { cancelled = true }
 
     sink.onRequest { amount ->
         if (amount <= 0) return@onRequest
 
-        var counter = amount
-        forEachAsync {
-            sink.next(it)
-            counter == Long.MAX_VALUE || --counter > 0
-        }.exceptionally {
-            sink.error(it)
-            null
-        }.thenRun {
-            if (counter > 0)
-                sink.complete()
+        lock.withLock {
+            if (remaining.get() >= amount) return@withLock
+
+            var counter = amount - remaining.get()
+            remaining.addAndGet(counter)
+            task = task.thenCompose {
+                forEachRemainingAsync {
+                    sink.next(it)
+                    lock.withLock { remaining.decrementAndGet() }
+                    !cancelled && (counter == Long.MAX_VALUE || --counter > 0)
+                }.exceptionally {
+                    sink.error(it)
+                    null
+                }.thenRun {
+                    if (counter > 0)
+                        sink.complete()
+                }
+            }
         }
     }
 }, overflowStrategy)

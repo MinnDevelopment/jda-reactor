@@ -18,6 +18,7 @@ repositories {
 dependencies {
     compileOnly("net.dv8tion:JDA:4.ALPHA.0_35")
     compileOnly("io.projectreactor:reactor-core:3.2.5.RELEASE")
+    implementation(kotlin("stdlib"))
 }
 
 configure<JavaPluginConvention> {
