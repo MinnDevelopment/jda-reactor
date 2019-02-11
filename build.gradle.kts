@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "club.minnced"
-version = "0.1.2"
+version = "0.1.3"
 
 repositories {
     jcenter()
@@ -17,7 +17,8 @@ repositories {
 
 dependencies {
     compileOnly("net.dv8tion:JDA:4.ALPHA.0_35")
-    compileOnly("io.projectreactor:reactor-core:3.2.5.RELEASE")
+
+    api("io.projectreactor:reactor-core:3.2.5.RELEASE")
     implementation(kotlin("stdlib"))
 }
 
@@ -48,13 +49,13 @@ val javadocJar = task<Jar>("javadocJar") {
 publishing {
     publications {
         register("BintrayRelease", MavenPublication::class) {
+            from(components["java"])
             groupId = project.group as String
             artifactId = project.name
             version = project.version as String
 
             artifact(javadocJar)
             artifact(sourcesJar)
-            artifact(jar)
         }
     }
 }
