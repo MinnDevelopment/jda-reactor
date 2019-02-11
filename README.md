@@ -74,6 +74,7 @@ fun sendAndLog(channel: MessageChannel, content: String) {
     val action = channel.sendMessage(content)
     action.asMono()
           .flatMap { it.addReaction(EMOTE).asMono() }
-          .subscribe { println("${channel.name}: $content") }
+          .doOnSuccess { println("${channel.name}: $content") }
+          .subscribe()
 }
 ```
