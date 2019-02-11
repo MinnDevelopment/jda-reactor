@@ -1,4 +1,4 @@
-
+[ ![version](https://api.bintray.com/packages/minndevelopment/maven/jda-reactor/images/download.svg) ](https://bintray.com/minndevelopment/maven/jda-reactor/_latestVersion)
 # jda-reactor
 
 A collection of kotlin extensions for JDA that make use with reactor-core easier.
