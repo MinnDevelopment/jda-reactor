@@ -16,8 +16,8 @@
 
 package club.minnced.jda.reactor;
 
-import net.dv8tion.jda.api.events.Event;
 import net.dv8tion.jda.api.events.ExceptionEvent;
+import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.ShutdownEvent;
 import net.dv8tion.jda.api.hooks.IEventManager;
 import reactor.core.publisher.EmitterProcessor;
@@ -26,13 +26,17 @@ import reactor.core.publisher.FluxProcessor;
 import reactor.core.publisher.FluxSink;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.Logger;
+import reactor.util.Loggers;
 
 import java.util.List;
+import java.util.logging.Level;
 
 public class ReactiveEventManager implements IEventManager {
-    private final FluxProcessor<Event, ? super Event> processor;
+    private static final Logger log = Loggers.getLogger(ReactiveEventManager.class);
+    private final FluxProcessor<GenericEvent, ? super GenericEvent> processor;
     private final Scheduler scheduler;
-    private final FluxSink<Event> eventSink;
+    private final FluxSink<GenericEvent> eventSink;
 
     private boolean disposeOnShutdown = true;
     private boolean instance = true;
@@ -46,22 +50,36 @@ public class ReactiveEventManager implements IEventManager {
         scheduler.start();
     }
 
-    public ReactiveEventManager(FluxProcessor<Event, ? super Event> processor, Scheduler scheduler, FluxSink.OverflowStrategy strategy) {
+    public ReactiveEventManager(FluxProcessor<GenericEvent, ? super GenericEvent> processor, Scheduler scheduler, FluxSink.OverflowStrategy strategy) {
         this.processor = processor;
         this.scheduler = scheduler;
         this.eventSink = processor.sink(strategy);
     }
 
+    /**
+     * Whether to dispose of the scheduler when a {@link net.dv8tion.jda.api.events.ShutdownEvent} is received
+     * <br>Default: true
+     *
+     * @param enabled
+     *        True, if shutdown should dispose the scheduler
+     */
     public void setDisposeOnShutdown(boolean enabled) {
         this.disposeOnShutdown = enabled;
     }
 
+    /**
+     * Whether the sink of this instance should be completed by a {@link net.dv8tion.jda.api.events.ShutdownEvent}.
+     * <br>Default: true
+     *
+     * @param enabled
+     *        True, if shutdown should complete the sink
+     */
     public void setInstance(boolean enabled) {
         this.instance = enabled;
     }
 
     @Override
-    public void handle(Event event) {
+    public void handle(GenericEvent event) {
         try {
             eventSink.next(event);
         } catch (Throwable t) {
@@ -74,8 +92,9 @@ public class ReactiveEventManager implements IEventManager {
         }
     }
 
-    public <T extends Event> Flux<T> on(Class<T> type) {
+    public <T extends GenericEvent> Flux<T> on(Class<T> type) {
         return processor.publishOn(scheduler)
+                .log(log, Level.FINEST, true)
                 .ofType(type);
     }
 

@@ -9,14 +9,14 @@ plugins {
 }
 
 group = "club.minnced"
-version = "0.1.3"
+version = "0.1.4"
 
 repositories {
     jcenter()
 }
 
 dependencies {
-    compileOnly("net.dv8tion:JDA:4.ALPHA.0_35")
+    compileOnly("net.dv8tion:JDA:4.ALPHA.0_39")
 
     api("io.projectreactor:reactor-core:3.2.5.RELEASE")
     implementation(kotlin("stdlib"))
@@ -32,6 +32,23 @@ val javadoc: Javadoc by tasks
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.apply {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+javadoc.apply {
+    isFailOnError = false
+    options.memberLevel = JavadocMemberLevel.PUBLIC
+    options.encoding = "UTF-8"
+    if (options is StandardJavadocDocletOptions) {
+        val opt = options as StandardJavadocDocletOptions
+        opt.author()
+        opt.links(
+            "https://projectreactor.io/docs/core/3.1.2.RELEASE/api/",
+            "https://docs.oracle.com/javase/8/docs/api/",
+            "https://ci.dv8tion.net/job/JDA4-Alpha/javadoc")
+        if (JavaVersion.current().isJava9Compatible) {
+            opt.addBooleanOption("html5", true)
+        }
+    }
 }
 
 val sourcesJar = task<Jar>("sourcesJar") {
