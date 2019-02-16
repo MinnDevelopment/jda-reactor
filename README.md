@@ -54,9 +54,12 @@ fun main() {
            .map { it.sendMessage("Pong!") }
            .subscribe { it.queue() }
 
-   JDABuilder(BOT_TOKEN)
+   val jda = JDABuilder(BOT_TOKEN)
         .setEventManager(manager)
         .build()
+        
+   jda.on(ShutdownEvent::class.java)
+      .subscribe { "That was fun!" }
 }
 ```
 
