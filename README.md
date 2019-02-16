@@ -46,9 +46,9 @@ Some small example usages of the components supported by this library.
 ```kotlin
 fun main() {
     val manager = ReactiveEventManager()
-    manager.on(ReadyEvent::class.java)
+    manager.on<ReadyEvent>()
            .subscribe { println("Ready to go!")  }
-    manager.on(MessageReceivedEvent::class.java)
+    manager.on<MessageReceivedEvent>()
            .filter { it.contentRaw == "!ping" }
            .map { it.channel }
            .map { it.sendMessage("Pong!") }
@@ -58,7 +58,7 @@ fun main() {
         .setEventManager(manager)
         .build()
         
-   jda.on(ShutdownEvent::class.java)
+   jda.on<ShutdownEvent>()
       .subscribe { "That was fun!" }
 }
 ```

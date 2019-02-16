@@ -33,6 +33,9 @@ fun <T : GenericEvent> JDA.on(type: Class<T>) : Flux<T> {
     return manager.on(type)
 }
 
+inline fun <reified T : GenericEvent> JDA.on() = on(T::class.java)
+inline fun <reified T : GenericEvent> ReactiveEventManager.on() = on(T::class.java)
+
 fun <T> RestAction<T>.asMono() = Mono.fromFuture(this::submit)
 
 fun <T, M> PaginationAction<T, M>.asFlux(overflowStrategy: FluxSink.OverflowStrategy = FluxSink.OverflowStrategy.LATEST) : Flux<T>
