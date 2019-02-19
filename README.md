@@ -62,7 +62,7 @@ fun main() {
 
    // you can also subscribe to events from the JDA instance
    jda.on<ShutdownEvent>()                         // Flux<ShutdownEvent>
-      .subscribe { "That was fun!" }               // Make a statement on shutdown, not guaranteed to run if daemon scheduler (default)
+      .subscribe { println("That was fun!") }               // Make a statement on shutdown, not guaranteed to run if daemon scheduler (default)
 }
 ```
 
