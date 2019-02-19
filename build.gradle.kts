@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("net.dv8tion:JDA:4.ALPHA.0_39")
+    compileOnly("net.dv8tion:JDA:4.ALPHA.0_46")
 
     api("io.projectreactor:reactor-core:3.2.5.RELEASE")
     implementation(kotlin("stdlib"))
@@ -29,10 +29,10 @@ configure<JavaPluginConvention> {
 
 val jar: Jar by tasks
 val javadoc: Javadoc by tasks
-val compileKotlin: KotlinCompile by tasks
-compileKotlin.apply {
+tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
+
 
 javadoc.apply {
     isFailOnError = false
