@@ -6,11 +6,13 @@ A collection of kotlin extensions for JDA that make use with reactor-core easier
 ## Installation
 
 Replace the `$VERSION` with the latest release version.
+<br>Replace `$JDA_VERSION` with the latest stable JDA v4 release.
 
 ### Gradle
 
 ```kotlin
 dependencies {
+    implementation("net.dv8tion:JDA:$JDA_VERSION")
     implementation("club.minnced:jda-reactor:$VERSION")
 }
 
@@ -23,8 +25,13 @@ repositories {
 
 ```xml
 <dependency>
-    <artifactId>jda-reactor</artifactId>
+    <groupId>net.dv8tion</groupId>
+    <artifactId>JDA</artifactId>
+    <version>$JDA_VERSION</version>
+</dependency>
+<dependency>
     <groupId>club.minnced</groupId>
+    <artifactId>jda-reactor</artifactId>
     <version>$VERSION</version>
 </dependency>
 ```
@@ -49,6 +56,7 @@ fun main() {
     val manager = ReactiveEventManager()
     // subscribe directly on the manager instance
     manager.on<ReadyEvent>()                       // Flux<ReadyEvent>
+           .next()                                 // Mono<ReadyEvent>
            .subscribe { println("Ready to go!")  } // Subscribe to event
     manager.on<MessageReceivedEvent>()             // Flux<MessageReceivedEvent>
            .filter { it.contentRaw == "!ping" }    // filter by content
@@ -91,8 +99,8 @@ fun sendAndLog(channel: MessageChannel, content: String) {
 ```kotlin
 fun onNextMessage(channel: MessageChannel, callback: (Message) -> Unit) {
     channel.onMessage()                // Flux<MessageReceivedEvent>
-           .take(1)                    // request(1)
-           .map { it.message }         // Flux<Message>
+           .next()                     // Mono<MessageReceivedEvent>
+           .map { it.message }         // Mono<Message>
            .subscribe { callback(it) }
 }
 
