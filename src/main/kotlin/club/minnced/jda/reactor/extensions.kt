@@ -24,6 +24,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
 import reactor.core.publisher.Mono
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -41,32 +42,39 @@ fun <T> RestAction<T>.asMono() = Mono.fromFuture(this::submit)
 fun <T, M> PaginationAction<T, M>.asFlux(overflowStrategy: FluxSink.OverflowStrategy = FluxSink.OverflowStrategy.LATEST) : Flux<T>
     where M : PaginationAction<T, M> = Flux.create<T>({ sink ->
     cache(false)
-    var task = CompletableFuture.completedFuture<Void>(null)
-    val remaining = AtomicLong(0L)
+    var task: CompletionStage<*> = CompletableFuture.completedFuture(null)
+    val remaining = AtomicLong(0)
+    var done = false
     val lock = ReentrantLock()
-    var cancelled = false
-
-    sink.onCancel { cancelled = true }
 
     sink.onRequest { amount ->
-        if (amount <= 0) return@onRequest
-
         lock.withLock {
-            if (remaining.get() >= amount) return@withLock
+            if (amount <= remaining.get() || done)
+                return@onRequest
+            if (amount == Long.MAX_VALUE)
+                remaining.set(Long.MAX_VALUE)
+            else
+                remaining.addAndGet(amount)
 
-            var counter = amount - remaining.get()
-            remaining.addAndGet(counter)
             task = task.thenCompose {
-                forEachRemainingAsync {
-                    sink.next(it)
-                    lock.withLock { remaining.decrementAndGet() }
-                    !cancelled && (counter == Long.MAX_VALUE || --counter > 0)
-                }.exceptionally {
-                    sink.error(it)
-                    null
-                }.thenRun {
-                    if (counter > 0)
+                when {
+                    done || remaining.get() <= 0 -> CompletableFuture.completedFuture<Void>(null)
+
+                    sink.isCancelled -> {
+                        done = true
                         sink.complete()
+                        CompletableFuture.completedFuture<Void>(null)
+                    }
+
+                    else -> forEachRemainingAsync {
+                        sink.next(it)
+                        !sink.isCancelled && remaining.decrementAndGet() > 0
+                    }.thenRun {
+                        if (remaining.get() > 0) lock.withLock {
+                            done = true
+                            sink.complete()
+                        }
+                    }
                 }
             }
         }
