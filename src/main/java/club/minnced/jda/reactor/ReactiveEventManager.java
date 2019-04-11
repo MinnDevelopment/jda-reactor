@@ -29,6 +29,7 @@ import reactor.core.scheduler.Schedulers;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -45,12 +46,12 @@ public class ReactiveEventManager implements IEventManager {
         this(FluxSink.OverflowStrategy.BUFFER);
     }
 
-    public ReactiveEventManager(FluxSink.OverflowStrategy strategy) {
+    public ReactiveEventManager(@Nonnull FluxSink.OverflowStrategy strategy) {
         this(EmitterProcessor.create(), Schedulers.newSingle("JDA-EventManager", true), strategy);
         scheduler.start();
     }
 
-    public ReactiveEventManager(FluxProcessor<GenericEvent, ? super GenericEvent> processor, Scheduler scheduler, FluxSink.OverflowStrategy strategy) {
+    public ReactiveEventManager(@Nonnull FluxProcessor<GenericEvent, ? super GenericEvent> processor, @Nonnull Scheduler scheduler, @Nonnull FluxSink.OverflowStrategy strategy) {
         this.processor = processor;
         this.scheduler = scheduler;
         this.eventSink = processor.sink(strategy);
@@ -79,7 +80,7 @@ public class ReactiveEventManager implements IEventManager {
     }
 
     @Override
-    public void handle(GenericEvent event) {
+    public void handle(@Nonnull GenericEvent event) {
         try {
             eventSink.next(event);
         } catch (Throwable t) {
@@ -92,22 +93,24 @@ public class ReactiveEventManager implements IEventManager {
         }
     }
 
-    public <T extends GenericEvent> Flux<T> on(Class<T> type) {
+    @Nonnull
+    public <T extends GenericEvent> Flux<T> on(@Nonnull Class<T> type) {
         return processor.publishOn(scheduler)
                 .log(log, Level.FINEST, true)
                 .ofType(type);
     }
 
     @Override
-    public void register(Object listener) {
+    public void register(@Nonnull Object listener) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void unregister(Object listener) {
+    public void unregister(@Nonnull Object listener) {
         throw new UnsupportedOperationException();
     }
 
+    @Nonnull
     @Override
     public List<Object> getRegisteredListeners() {
         throw new UnsupportedOperationException();
