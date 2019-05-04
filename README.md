@@ -77,6 +77,12 @@ fun main() {
 
 ### Mono/Flux RestAction
 
+Every RestAction receives an `asMono` extensions which converts them into a `Mono<T>` of the same result type.
+<br>Additionally some more specific types such as `PaginationAction` can be streamed into a `Flux<T>`
+which will automatically paginate the endpoint as demanded by the subscription.
+
+#### PaginationAction\<T, *>
+
 ```kotlin
 fun getMessagesForUser(channel: MessageChannel, user: User): Flux<Message> {
     val action = channel.iterableHistory
@@ -85,6 +91,8 @@ fun getMessagesForUser(channel: MessageChannel, user: User): Flux<Message> {
 }
 ```
 
+#### RestAction\<T>
+
 ```kotlin
 fun sendAndLog(channel: MessageChannel, content: String) {
     val action = channel.sendMessage(content)
@@ -92,6 +100,17 @@ fun sendAndLog(channel: MessageChannel, content: String) {
           .flatMap { it.addReaction(EMOTE).asMono() }           // Mono<Void!> = empty mono
           .doOnSuccess { println("${channel.name}: $content") } // add side-effect
           .subscribe()                                          // subscribe to empty stream
+}
+```
+
+#### RestAction<List\<T>>
+
+```kotlin
+fun getResponsibleModerators(guild: Guild): Flux<String> {
+ return guild.retrieveBanList()     // RestAction<List<Guild.Ban>>
+             .toFlux()              // Flux<Ban>
+             .map { it.user }       // Flux<User>
+             .map { it.asTag }      // Flux<String>
 }
 ```
 

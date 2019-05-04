@@ -34,11 +34,83 @@ fun <T : GenericEvent> JDA.on(type: Class<T>) : Flux<T> {
     return manager.on(type)
 }
 
+/**
+ * Constructs an event flow using a [Flux] of the specified type.
+ *
+ * # Example
+ *
+ * ```
+ * jda.on<MessageReceivedEvent>()                // Flux<MessageReceivedEvent>
+ *    .map { it.message }                        // Flux<Message>
+ *    .filter { it.author.asTag == "Minn#6688" } // Flux<Message>
+ *    .subscribe { println("Minn#6688 said ${it.contentDisplay}") }
+ * ```
+ */
 inline fun <reified T : GenericEvent> JDA.on() = on(T::class.java)
 inline fun <reified T : GenericEvent> ReactiveEventManager.on() = on(T::class.java)
 
-fun <T> RestAction<T>.asMono() = Mono.fromFuture(this::submit)
+/**
+ * Converts the RestAction into a [Mono] of the same result type.
+ *
+ * - If the result type is a list you can use [toFlux] instead.
+ * - If the type of RestAction is a PaginationAction you can use [asFlux] instead.
+ *
+ * This is a shortcut for `Mono.fromFuture(action.submit())`.
+ *
+ * # Example
+ *
+ * ```
+ * channel.sendMessage("This message will self-destruct in 5 seconds) // RestAction<Message>
+ *        .asMono()                                                   // Mono<Message>
+ *        .delay(Duration.ofSeconds(5))                               // Mono<Message>
+ *        .flatMap { it.delete().asMono() }                           // Mono<Void>
+ *        .subscribe()
+ * ```
+ */
+fun <T> RestAction<T>.asMono() = Mono.fromFuture(this::submit)!!
 
+/**
+ * Maps the response of this RestAction into a Flux.
+ *
+ * If this is a [PaginationAction] use [asFlux] instead.
+ *
+ * This is a shortcut for `action.asMono().flatMapIterable{it}`.
+ *
+ * # Example
+ *
+ * ```
+ * guild.retrieveBanList()     // RestAction<List<Guild.Ban>>
+ *      .toFlux()              // Flux<Ban>
+ *      .map { it.user }       // Flux<User>
+ *      .map { it.asTag }      // Flux<String>
+ *      .subscribe {
+ *          // Print the DiscordTag (Example: Minn#6688)
+ *          println(it)
+ *      }
+ * ````
+ */
+fun <T> RestAction<List<T>>.toFlux() = asMono().flatMapIterable { it }!!
+
+/**
+ * Converts a PaginationAction into a streamed flux of data.
+ * Unlike [toFlux] this will make multiple requests (as needed) in order to satisfy
+ * the requested resources. [toFlux] makes a single request and streams the result into a Flux publisher
+ * while this will paginate the underlying endpoint until it satisfied the demand or reaches an end.
+ *
+ * # Example
+ *
+ * ```
+ * guild.retrieveAuditLogs()  // AuditLogPaginationAction : PaginationAction<AuditLogEntry, *>
+ *      .type(ActionType.BAN) // AuditLogPaginationAction : PaginationAction<AuditLogEntry, *>
+ *      .asFlux()                                                // Flux<AuditLogEntry>
+ *      .take(5)                                                 // Flux<AuditLogEntry>
+ *      .map { "${it.user} banned user with id ${it.targetId}" } // Flux<String>
+ *      .subscribe { println(it) }
+ * ```
+ *
+ * @param overflowStrategy
+ *        The OverflowStrategy to apply (default [LATEST][FluxSink.OverflowStrategy.LATEST])
+ */
 fun <T, M> PaginationAction<T, M>.asFlux(overflowStrategy: FluxSink.OverflowStrategy = FluxSink.OverflowStrategy.LATEST) : Flux<T>
     where M : PaginationAction<T, M> = Flux.create<T>({ sink ->
     cache(false)
