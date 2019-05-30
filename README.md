@@ -10,7 +10,7 @@ Replace the `$VERSION` with the latest release version.
 
 ### Gradle
 
-```kotlin
+```gradle
 dependencies {
     implementation("net.dv8tion:JDA:$JDA_VERSION")
     implementation("club.minnced:jda-reactor:$VERSION")
