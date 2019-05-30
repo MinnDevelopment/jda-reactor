@@ -67,7 +67,7 @@ inline fun <reified T : GenericEvent> ReactiveEventManager.on() = on(T::class.ja
  *        .subscribe()
  * ```
  */
-fun <T> RestAction<T>.asMono() = Mono.fromFuture(this::submit)!!
+fun <T> RestAction<T>.asMono() : Mono<T> = Mono.fromFuture(this::submit)
 
 /**
  * Maps the response of this RestAction into a Flux.
@@ -89,7 +89,7 @@ fun <T> RestAction<T>.asMono() = Mono.fromFuture(this::submit)!!
  *      }
  * ````
  */
-fun <T> RestAction<List<T>>.toFlux() = asMono().flatMapIterable { it }!!
+fun <T> RestAction<List<T>>.toFlux() : Flux<T> = asMono().flatMapIterable { it }
 
 /**
  * Converts a PaginationAction into a streamed flux of data.
@@ -118,31 +118,35 @@ fun <T, M> PaginationAction<T, M>.asFlux(overflowStrategy: FluxSink.OverflowStra
     val remaining = AtomicLong(0)
     var done = false
     val lock = ReentrantLock()
+    sink.onDispose {
+        // Tell the worker to stop iterating
+        done = true
+    }
 
     sink.onRequest { amount ->
         lock.withLock {
+            // If amount is lower than demand we don't need to do anything
             if (amount <= remaining.get() || done)
                 return@onRequest
-            if (amount == Long.MAX_VALUE)
-                remaining.set(Long.MAX_VALUE)
-            else
-                remaining.addAndGet(amount)
+            // Update our demand with new requested amount
+            remaining.set(amount)
 
             task = task.thenCompose {
                 when {
+                    // If completed or disposed, do nothing
                     done || remaining.get() <= 0 -> CompletableFuture.completedFuture<Void>(null)
 
-                    sink.isCancelled -> {
-                        done = true
-                        sink.complete()
-                        CompletableFuture.completedFuture<Void>(null)
-                    }
-
+                    // Collect remaining supply from pagination
                     else -> forEachRemainingAsync {
                         sink.next(it)
-                        !sink.isCancelled && remaining.decrementAndGet() > 0
+                        //If we completed or were disposed stop iteration
+                        // otherwise continue until demand is matched
+                        !done && remaining.decrementAndGet() > 0
                     }.thenRun {
-                        if (remaining.get() > 0) lock.withLock {
+                        //If we still have remaining requests then we exhausted the supply of the pagination
+                        // This means we are done and call complete()
+                        //If done = true we already completed or were disposed, do nothing
+                        if (remaining.get() > 0 && !done) lock.withLock {
                             done = true
                             sink.complete()
                         }
