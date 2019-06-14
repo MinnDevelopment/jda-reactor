@@ -48,6 +48,8 @@ repositories {
 
 Some small example usages of the components supported by this library.
 
+There is a complete bot written as an example available at [reactive-jda-bot](https://github.com/MinnDevelopment/reactive-jda-bot).
+
 ### ReactiveEventManager
 
 ```kotlin
