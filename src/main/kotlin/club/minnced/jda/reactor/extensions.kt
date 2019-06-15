@@ -89,7 +89,7 @@ fun <T> RestAction<T>.asMono() : Mono<T> = Mono.fromFuture(this::submit)
  *      }
  * ````
  */
-fun <T> RestAction<List<T>>.toFlux() : Flux<T> = asMono().flatMapIterable { it }
+fun <T> RestAction<out Iterable<T>>.toFlux() : Flux<T> = asMono().flatMapIterable { it }
 
 /**
  * Converts a PaginationAction into a streamed flux of data.

@@ -105,7 +105,7 @@ fun sendAndLog(channel: MessageChannel, content: String) {
 }
 ```
 
-#### RestAction<List\<T>>
+#### RestAction<Iterable\<T>>
 
 ```kotlin
 fun getResponsibleModerators(guild: Guild): Flux<String> {
