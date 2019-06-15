@@ -108,7 +108,7 @@ fun sendAndLog(channel: MessageChannel, content: String) {
 #### RestAction<Iterable\<T>>
 
 ```kotlin
-fun getResponsibleModerators(guild: Guild): Flux<String> {
+fun getBannedUsers(guild: Guild): Flux<String> {
  return guild.retrieveBanList()     // RestAction<List<Guild.Ban>>
              .toFlux()              // Flux<Ban>
              .map { it.user }       // Flux<User>
