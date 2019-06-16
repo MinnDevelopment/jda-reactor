@@ -47,6 +47,7 @@ javadoc.apply {
             "https://ci.dv8tion.net/job/JDA4-Beta/javadoc")
         if (JavaVersion.current().isJava9Compatible) {
             opt.addBooleanOption("html5", true)
+            opt.addStringOption("-release", "8")
         }
     }
 }
