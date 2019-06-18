@@ -30,6 +30,7 @@ import reactor.util.Logger;
 import reactor.util.Loggers;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -114,5 +115,153 @@ public class ReactiveEventManager implements IEventManager {
     @Override
     public List<Object> getRegisteredListeners() {
         throw new UnsupportedOperationException();
+    }
+
+    public static class Builder {
+        private FluxProcessor<GenericEvent, ? super GenericEvent> processor;
+        private Scheduler scheduler;
+        private FluxSink.OverflowStrategy overflowStrategy;
+        private boolean instance = true, dispose = true;
+
+        /**
+         * The {@link reactor.core.publisher.FluxProcessor} to use.
+         * <br>Default: {@link reactor.core.publisher.EmitterProcessor}.
+         *
+         * @param  processor
+         *         The processor to use
+         *
+         * @return Current builder
+         */
+        @Nonnull
+        public Builder setProcessor(@Nullable FluxProcessor<GenericEvent, ? super GenericEvent> processor) {
+            this.processor = processor;
+            return this;
+        }
+
+        /**
+         * The {@link reactor.core.scheduler.Scheduler} to use.
+         * <br>Default: {@link reactor.core.scheduler.Schedulers#newSingle(String, boolean)}, daemon = true.
+         *
+         * @param  scheduler
+         *         The scheduler to use
+         *
+         * @return Current builder
+         */
+        @Nonnull
+        public Builder setScheduler(@Nullable Scheduler scheduler) {
+            this.scheduler = scheduler;
+            return this;
+        }
+
+        /**
+         * The {@link reactor.core.publisher.FluxSink.OverflowStrategy} to use.
+         * <br>Default: {@link reactor.core.publisher.FluxSink.OverflowStrategy#BUFFER}.
+         *
+         * @param  overflowStrategy
+         *         The overflow strategy
+         *
+         * @return Current builder
+         */
+        @Nonnull
+        public Builder setOverflowStrategy(@Nullable FluxSink.OverflowStrategy overflowStrategy) {
+            this.overflowStrategy = overflowStrategy;
+            return this;
+        }
+
+        /**
+         * Whether to complete the event sink when shutdown even is fired.
+         * <br>Default: True
+         *
+         * @param  instance
+         *         True, if shutdown should signal complete()
+         *
+         * @return Current builder
+         */
+        @Nonnull
+        public Builder setInstance(boolean instance) {
+            this.instance = instance;
+            return this;
+        }
+
+        /**
+         * Whether the scheduler should be disposed on shutdown.
+         *
+         * @param  dispose
+         *         True, if the shutdown should call dispose() on the scheduler
+         *
+         * @return Current builder
+         */
+        @Nonnull
+        public Builder setDispose(boolean dispose) {
+            this.dispose = dispose;
+            return this;
+        }
+
+        /**
+         * The {@link reactor.core.publisher.FluxProcessor} that was last set with {@link #setProcessor(reactor.core.publisher.FluxProcessor)}.
+         *
+         * @return The processor or null
+         */
+        @Nullable
+        public FluxProcessor<GenericEvent, ? super GenericEvent> getProcessor() {
+            return processor;
+        }
+
+        /**
+         * The {@link reactor.core.scheduler.Scheduler} that was last set with {@link #setScheduler(reactor.core.scheduler.Scheduler)}.
+         *
+         * @return The scheduler or null
+         */
+        @Nullable
+        public Scheduler getScheduler() {
+            return scheduler;
+        }
+
+        /**
+         * The {@link reactor.core.publisher.FluxSink.OverflowStrategy} that was last set with {@link #setOverflowStrategy(reactor.core.publisher.FluxSink.OverflowStrategy)}.
+         *
+         * @return The overflow strategy or null
+         */
+        @Nullable
+        public FluxSink.OverflowStrategy getOverflowStrategy() {
+            return overflowStrategy;
+        }
+
+        /**
+         * Whether the shutdown event will complete the flux sink.
+         *
+         * @return True, if the shutdown event will complete the flux sink
+         */
+        public boolean isInstance() {
+            return instance;
+        }
+
+        /**
+         * Whether the scheduler will be disposed on shutdown.
+         *
+         * @return True, if the scheduler will be disposed on shutdown.
+         */
+        public boolean isDispose() {
+            return dispose;
+        }
+
+        /**
+         * Creates a new {@link club.minnced.jda.reactor.ReactiveEventManager} instance
+         * with the specified settings.
+         *
+         * @return The {@link club.minnced.jda.reactor.ReactiveEventManager}
+         */
+        @Nonnull
+        public ReactiveEventManager build() {
+            FluxProcessor<GenericEvent, ? super GenericEvent> processor = this.processor == null ? EmitterProcessor.create() : this.processor;
+            Scheduler scheduler =  this.scheduler == null ? Schedulers.newSingle("JDA-EventManager", true) : this.scheduler;
+            FluxSink.OverflowStrategy strategy = this.overflowStrategy == null ? FluxSink.OverflowStrategy.BUFFER : this.overflowStrategy;
+            if (this.scheduler == null)
+                scheduler.start();
+            ReactiveEventManager manager = new ReactiveEventManager(processor, scheduler, strategy);
+            manager.setDisposeOnShutdown(dispose);
+            manager.setInstance(instance);
+            return manager;
+        }
     }
 }
