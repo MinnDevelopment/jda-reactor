@@ -100,3 +100,10 @@ bintray {
         })
     })
 }
+
+val build: Task by tasks
+build.apply { 
+    dependsOn(javadocJar)
+    dependsOn(sourcesJar)
+    dependsOn(jar)
+}
