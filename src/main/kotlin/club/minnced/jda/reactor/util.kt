@@ -16,12 +16,54 @@
 
 package club.minnced.jda.reactor
 
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Scheduler
 
-/** Same as `Mono.justOrEmpty(it)` */
+/**
+ * Same as `Mono.justOrEmpty(it)`
+ *
+ * @return Mono for the current nullable value
+ */
 fun <T> T?.toMono(): Mono<T> = Mono.justOrEmpty(this)
 
-/** Creates a new [ReactiveEventManager] */
+/**
+ * The scheduler for this JDA instance
+ *
+ * @throws[IllegalStateException] If this does not use [ReactiveEventManager].
+ *
+ * @return The scheduler
+ */
+val JDA.scheduler: Scheduler get() {
+    val eventManager = this.eventManager as? ReactiveEventManager ?: throw IllegalStateException("You are not using a ReactiveEventManager!")
+    return eventManager.scheduler
+}
+
+/**
+ * Make this JDABuilder use a [ReactiveEventManager]
+ *
+ * @param[block] Initializer block
+ *
+ * @return The current JDABuilder for chaining
+ */
+inline fun JDABuilder.reactive(block: ReactiveEventManager.Builder.() -> Unit = {}) = setEventManager(createManager(block))
+
+/**
+ * Make this DefaultShardManagerBuilder use a [ReactiveEventManager]
+ *
+ * @param[block] Initializer block
+ *
+ * @return The current DefaultShardManagerBuilder for chaining
+ */
+fun DefaultShardManagerBuilder.reactive(block: ReactiveEventManager.Builder.() -> Unit = {}) = setEventManagerProvider { createManager(block) }
+
+/**
+ * Creates a new [ReactiveEventManager]
+ *
+ * @return The [ReactiveEventManager].
+ */
 inline fun createManager(block: ReactiveEventManager.Builder.() -> Unit = {}): ReactiveEventManager {
     return ReactiveEventManager.Builder().apply(block).build()
 }

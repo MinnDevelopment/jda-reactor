@@ -16,7 +16,9 @@
 
 package club.minnced.jda.reactor
 
+import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.*
+import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.events.channel.category.update.GenericCategoryUpdateEvent
 import net.dv8tion.jda.api.events.channel.text.update.GenericTextChannelUpdateEvent
 import net.dv8tion.jda.api.events.channel.voice.update.GenericVoiceChannelUpdateEvent
@@ -97,3 +99,24 @@ fun MessageChannel.onMessage(): Flux<MessageReceivedEvent> {
     val id = this.idLong
     return jda.on(MessageReceivedEvent::class.java).filter { it.channel.idLong == id }
 }
+
+fun <T : GenericEvent> JDA.on(type: Class<T>) : Flux<T> {
+    val manager = eventManager as? ReactiveEventManager ?: throw IllegalStateException("You are not using a ReactiveEventManager!")
+    return manager.on(type)
+}
+
+/**
+ * Constructs an event flow using a [Flux] of the specified type.
+ *
+ * # Example
+ *
+ * ```
+ * jda.on<MessageReceivedEvent>()                // Flux<MessageReceivedEvent>
+ *    .map { it.message }                        // Flux<Message>
+ *    .filter { it.author.asTag == "Minn#6688" } // Flux<Message>
+ *    .subscribe { println("Minn#6688 said ${it.contentDisplay}") }
+ * ```
+ */
+inline fun <reified T : GenericEvent> JDA.on() = on(T::class.java)
+
+inline fun <reified T : GenericEvent> ReactiveEventManager.on() = on(T::class.java)

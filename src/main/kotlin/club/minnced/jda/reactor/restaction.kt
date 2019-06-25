@@ -16,8 +16,6 @@
 
 package club.minnced.jda.reactor
 
-import net.dv8tion.jda.api.JDA
-import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.requests.RestAction
 import net.dv8tion.jda.api.requests.restaction.pagination.PaginationAction
 import reactor.core.publisher.Flux
@@ -28,26 +26,6 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
-
-fun <T : GenericEvent> JDA.on(type: Class<T>) : Flux<T> {
-    val manager = eventManager as? ReactiveEventManager ?: throw IllegalStateException("You are not using a ReactiveEventManager!")
-    return manager.on(type)
-}
-
-/**
- * Constructs an event flow using a [Flux] of the specified type.
- *
- * # Example
- *
- * ```
- * jda.on<MessageReceivedEvent>()                // Flux<MessageReceivedEvent>
- *    .map { it.message }                        // Flux<Message>
- *    .filter { it.author.asTag == "Minn#6688" } // Flux<Message>
- *    .subscribe { println("Minn#6688 said ${it.contentDisplay}") }
- * ```
- */
-inline fun <reified T : GenericEvent> JDA.on() = on(T::class.java)
-inline fun <reified T : GenericEvent> ReactiveEventManager.on() = on(T::class.java)
 
 /**
  * Converts the RestAction into a [Mono] of the same result type.

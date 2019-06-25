@@ -59,6 +59,16 @@ public class ReactiveEventManager implements IEventManager {
     }
 
     /**
+     * The scheduler for this instance
+     *
+     * @return The scheduler for this instance
+     */
+    @Nonnull
+    public Scheduler getScheduler() {
+        return scheduler;
+    }
+
+    /**
      * Whether to dispose of the scheduler when a {@link net.dv8tion.jda.api.events.ShutdownEvent} is received
      * <br>Default: true
      *
