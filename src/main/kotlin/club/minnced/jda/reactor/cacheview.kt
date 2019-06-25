@@ -22,7 +22,11 @@ import reactor.core.publisher.toFlux
 
 /**
  * Creates a Flux using [CacheView.lockedIterator] and closes it after usage.
+ *
+ * @return Lazy flux that will apply a read-lock on the cache
  */
-fun <T : Any> CacheView<T>.toFluxLocked(): Flux<T> = lockedIterator().let { iterator ->
+fun <T : Any> CacheView<T>.toFluxLocked(): Flux<T> = Flux.defer {
+    // Use defer to make this lazy, otherwise it will lock this right away before subscribe() is called!
+    val iterator = lockedIterator()
     iterator.toFlux().doFinally { iterator.close() }
 }
