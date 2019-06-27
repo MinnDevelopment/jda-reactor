@@ -60,12 +60,14 @@ fun main() {
     manager.on<ReadyEvent>()                       // Flux<ReadyEvent>
            .next()                                 // Mono<ReadyEvent>
            .subscribe { println("Ready to go!")  } // Subscribe to event
+
     manager.on<MessageReceivedEvent>()             // Flux<MessageReceivedEvent>
            .map { it.message }                     // Flux<Message>
            .filter { it.contentRaw == "!ping" }    // filter by content
            .map { it.channel }                     // Flux<MessageChannel>
            .map { it.sendMessage("Pong!") }        // Flux<MessageAction>
-           .subscribe { it.queue() }               // Subscribe to event -> send message on success
+           .flatMap { it.asMono() }                // Flux<Message> (send message and provide result)
+           .subscribe()                            // Subscribe to event
 
    val jda = JDABuilder(BOT_TOKEN)
         .setEventManager(manager)

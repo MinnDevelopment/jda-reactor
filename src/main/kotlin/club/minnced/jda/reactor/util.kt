@@ -30,6 +30,16 @@ import reactor.core.scheduler.Scheduler
 fun <T> T?.toMono(): Mono<T> = Mono.justOrEmpty(this)
 
 /**
+ * Lazy version of `Mono.then(Mono)`.
+ *
+ * @param[R] The result type
+ * @param[callback] The callback to pass to [Mono.defer]
+ *
+ * @return The updated Mono
+ */
+fun <R> Mono<*>.then(callback: () -> Mono<R>): Mono<R> = then(Mono.defer(callback))
+
+/**
  * The scheduler for this JDA instance
  *
  * @throws[IllegalStateException] If this does not use [ReactiveEventManager].
