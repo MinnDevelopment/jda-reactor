@@ -19,8 +19,10 @@ package club.minnced.jda.reactor
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Scheduler
+import java.util.concurrent.CompletionStage
 
 /**
  * Same as `Mono.justOrEmpty(it)`
@@ -35,9 +37,31 @@ fun <T> T?.toMono(): Mono<T> = Mono.justOrEmpty(this)
  * @param[R] The result type
  * @param[callback] The callback to pass to [Mono.defer]
  *
- * @return The updated Mono
+ * @return Mono for the termination signal
  */
 fun <R> Mono<*>.then(callback: () -> Mono<R>): Mono<R> = then(Mono.defer(callback))
+
+/**
+ * Lazy version of `Flux.then(Mono)`.
+ *
+ * @param[R] The result type
+ * @param[callback] The callback to pass to [Mono.defer]
+ *
+ * @return Flux for the termination signal
+ */
+fun <R> Flux<*>.then(callback: () -> Mono<R>): Mono<R> = then(Mono.defer(callback))
+
+/**
+ * Converts the iterable of completion stages into a Flux of the result types.
+ *
+ * @param[T] The result type
+ *
+ * @return [Flux] for the result
+ */
+fun <T> Iterable<CompletionStage<out T>>.asFlux(): Flux<T> {
+    return Flux.fromIterable(this)
+               .flatMap { Mono.fromCompletionStage(it) }
+}
 
 /**
  * The scheduler for this JDA instance
