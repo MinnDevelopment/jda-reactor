@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+@file:JvmName("Utils")
 package club.minnced.jda.reactor
 
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder
+import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Scheduler
@@ -47,9 +48,39 @@ fun <R> Mono<*>.then(callback: () -> Mono<R>): Mono<R> = then(Mono.defer(callbac
  * @param[R] The result type
  * @param[callback] The callback to pass to [Mono.defer]
  *
- * @return Flux for the termination signal
+ * @return Mono for the termination signal
  */
 fun <R> Flux<*>.then(callback: () -> Mono<R>): Mono<R> = then(Mono.defer(callback))
+
+/**
+ * Combination of [Flux.filter] and [Flux.next].
+ * Shortcut for `flux.filter(predicate).next()`.
+ *
+ * @param[predicate] The filter function
+ *
+ * @return `Mono<T>` for the matched result
+ */
+fun <T> Flux<T>.filterFirst(predicate: (T) -> Boolean): Mono<T> = filter(predicate).next()
+
+/**
+ * Similar to [filterFirst] but accepts a publisher for the result.
+ * Shortcut for `flux.filterWhen(predicate).next()`
+ *
+ * @param[predicate] The filter function
+ *
+ * @return `Mono<T>` for the matched result
+ */
+fun <T> Flux<T>.filterFirstWhen(predicate: (T) -> Publisher<Boolean>): Mono<T> = filterWhen(predicate).next()
+
+/**
+ * Combination of [Flux.next] and [Mono.flatMap].
+ * Shortcut for `flux.next().flatMap(func)`
+ *
+ * @param[func] The transformation function
+ *
+ * @return `Mono<R>` for the result
+ */
+fun <T, R> Flux<T>.nextWhen(func: (T) -> Mono<R>): Mono<R> = next().flatMap(func)
 
 /**
  * Converts the iterable of completion stages into a Flux of the result types.

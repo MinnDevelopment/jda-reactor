@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+@file:JvmName("CacheViews")
 package club.minnced.jda.reactor
 
 import net.dv8tion.jda.api.utils.cache.CacheView

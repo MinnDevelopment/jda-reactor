@@ -146,3 +146,36 @@ fun onNameChange(channel: VoiceChannel): Flux<String> {
                   .map { it.newName }                      // Flux<String>
 }
 ```
+
+### CacheView
+
+I've added a special `toFluxLocked` which makes use of the `lockedIterator()` that was introduced in JDA version 4. This will automatically lock the cache view for read access when `subscribe()` is invoked and unlock it on the completion signal.
+
+#### Example toFluxLocked
+
+```kotlin
+fun findUserByName(jda: JDA, name: String): Mono<User> {
+    return jda.userCache
+              .toFluxLocked()                  // Flux<User> lazy locked user cache
+              .filterFirst { it.name == name } // Mono<User> unlock on first match
+}
+
+fun sendToUser(jda: JDA, name: String, content: String) {
+    return findUserByName(name)                          // Mono<User>
+           .flatMap { it.openPrivateChannel().asMono() } // Mono<PrivateChannel>
+           .flatMap { it.sendMessage(content).asMono() } // Mono<Message>
+           .subscribe() // lock the user cache and look for the user by name
+}
+```
+
+### Quality of Life Extensions
+
+I've added a few extensions to reactor itself that might be useful when working with JDA.
+
+- `T?.toMono()` improvement of `T.toMono()` which uses `Mono.justOrEmpty` instead
+- `Mono.then(() -> Mono<R>)` lazy version of `Mono.then(Mono<R>)` similar to `Mono.flatMap`
+- `Flux.then(() -> Mono<R>)` same as above
+- `Flux.filterFirst((T) -> Boolean)` combination of `filter().next()`
+- `Flux.filterFirstWhen((T) -> Publisher<Boolean>)` combination of `filterWhen().next()`
+- `Flux.nextWhen((T) -> Mono<R>)` combination of `next().flatMap()`
+- `Iterable<CompletionStage<T>>.asFlux(): Flux<T>` flatten lists of completion stages
