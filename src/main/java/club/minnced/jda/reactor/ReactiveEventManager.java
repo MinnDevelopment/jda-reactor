@@ -19,7 +19,9 @@ package club.minnced.jda.reactor;
 import net.dv8tion.jda.api.events.ExceptionEvent;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.ShutdownEvent;
+import net.dv8tion.jda.api.hooks.EventListener;
 import net.dv8tion.jda.api.hooks.IEventManager;
+import reactor.core.Disposable;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxProcessor;
@@ -31,7 +33,10 @@ import reactor.util.Loggers;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 public class ReactiveEventManager implements IEventManager {
@@ -39,6 +44,7 @@ public class ReactiveEventManager implements IEventManager {
     private final FluxProcessor<GenericEvent, ? super GenericEvent> processor;
     private final Scheduler scheduler;
     private final FluxSink<GenericEvent> eventSink;
+    private final Map<EventListener, Disposable> listeners = new HashMap<>();
 
     private boolean disposeOnShutdown = true;
     private boolean instance = true;
@@ -113,18 +119,28 @@ public class ReactiveEventManager implements IEventManager {
 
     @Override
     public void register(@Nonnull Object listener) {
-        throw new UnsupportedOperationException();
+        if (listener instanceof EventListener) {
+            EventListener eventListener = (EventListener) listener;
+            Disposable disposable = on(GenericEvent.class).subscribe(eventListener::onEvent);
+            listeners.put(eventListener, disposable);
+        }
+        else throw new UnsupportedOperationException();
     }
 
     @Override
     public void unregister(@Nonnull Object listener) {
-        throw new UnsupportedOperationException();
+        if (listener instanceof EventListener) {
+            Disposable disposable = listeners.remove(listener);
+            if (disposable != null)
+                disposable.dispose();
+        }
+        else throw new UnsupportedOperationException();
     }
 
     @Nonnull
     @Override
     public List<Object> getRegisteredListeners() {
-        throw new UnsupportedOperationException();
+        return new ArrayList<>(listeners.keySet());
     }
 
     public static class Builder {
