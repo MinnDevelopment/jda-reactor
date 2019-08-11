@@ -9,14 +9,14 @@ plugins {
 }
 
 group = "club.minnced"
-version = "0.2.6"
+version = "0.2.7"
 
 repositories {
     jcenter()
 }
 
 dependencies {
-    compileOnly("net.dv8tion:JDA:4.BETA.0_24")
+    compileOnly("net.dv8tion:JDA:4.0.0_39")
 
     api("io.projectreactor:reactor-core:3.2.5.RELEASE")
     implementation(kotlin("stdlib"))
@@ -44,7 +44,7 @@ javadoc.apply {
         opt.links(
             "https://projectreactor.io/docs/core/3.1.2.RELEASE/api/",
             "https://docs.oracle.com/javase/8/docs/api/",
-            "https://ci.dv8tion.net/job/JDA4-Beta/javadoc")
+            "https://ci.dv8tion.net/job/JDA/javadoc")
         if (JavaVersion.current().isJava9Compatible) {
             opt.addBooleanOption("html5", true)
             opt.addStringOption("-release", "8")
