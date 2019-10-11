@@ -19,6 +19,7 @@ package club.minnced.jda.reactor
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.*
 import net.dv8tion.jda.api.events.GenericEvent
+import net.dv8tion.jda.api.events.RawGatewayEvent
 import net.dv8tion.jda.api.events.channel.category.update.GenericCategoryUpdateEvent
 import net.dv8tion.jda.api.events.channel.text.update.GenericTextChannelUpdateEvent
 import net.dv8tion.jda.api.events.channel.voice.update.GenericVoiceChannelUpdateEvent
@@ -120,3 +121,15 @@ fun <T : GenericEvent> JDA.on(type: Class<T>) : Flux<T> {
 inline fun <reified T : GenericEvent> JDA.on() = on(T::class.java)
 
 inline fun <reified T : GenericEvent> ReactiveEventManager.on() = on(T::class.java)
+
+/**
+ * Filters a [RawGatewayEvent] by the provided type.
+ *
+ * Must be enabled by [JDABuilder#setRawEventsEnabled][net.dv8tion.jda.api.JDABuilder.setRawEventsEnabled]
+ * otherwise this flux will never publish any events.
+ *
+ * @param types The types to filter
+ *
+ * @return [Flux] of [RawGatewayEvent] for the provided type
+ */
+fun JDA.onRaw(vararg types: String): Flux<RawGatewayEvent> = on(RawGatewayEvent::class.java).filter { it.type in types }
