@@ -20,7 +20,6 @@ import net.dv8tion.jda.api.entities.Icon
 import net.dv8tion.jda.api.entities.Message
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.core.publisher.toFlux
 import reactor.core.scheduler.Schedulers
 import java.io.*
 import java.nio.charset.Charset
@@ -31,9 +30,8 @@ import java.nio.charset.Charset
  * @return[Mono]
  */
 fun Message.Attachment.toInputStream(): Mono<InputStream> {
-    return Mono.fromFuture { retrieveInputStream() }
-            .doAfterSuccessOrError { it, _ -> it?.close() }
-            .publishOn(Schedulers.elastic())
+    return toByteArray()
+            .map<InputStream> { ByteArrayInputStream(it) }
 }
 
 /**
@@ -42,10 +40,8 @@ fun Message.Attachment.toInputStream(): Mono<InputStream> {
  * @return[Flux]
  */
 fun Message.Attachment.toBytes(): Flux<Byte> {
-    return toInputStream()
-            .map { BufferedInputStream(it) }
-            .map { it.iterator() }
-            .flatMapMany { it.toFlux() }
+    return toByteArray()
+            .flatMapIterable { it.asIterable() }
 }
 
 /**
@@ -69,9 +65,15 @@ fun Message.Attachment.toLines(): Flux<String> {
  * @return[Mono]
  */
 fun Message.Attachment.toByteArray(): Mono<ByteArray> {
-    return toBytes()
-            .collectList()
-            .map { it.toByteArray() }
+    return Mono.fromFuture { retrieveInputStream() }
+               .map {
+                   it.use { source ->
+                       val buffer =  ByteArrayOutputStream()
+                       source.copyTo(buffer)
+                       buffer.toByteArray()
+                   }
+               }
+               .publishOn(Schedulers.elastic())
 }
 
 /**
