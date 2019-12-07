@@ -29,6 +29,8 @@ import net.dv8tion.jda.api.events.guild.update.GenericGuildUpdateEvent
 import net.dv8tion.jda.api.events.message.GenericMessageEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.user.GenericUserEvent
+import net.dv8tion.jda.api.hooks.EventListener
+import net.dv8tion.jda.api.sharding.ShardManager
 import reactor.core.publisher.Flux
 
 // Guild events
@@ -119,6 +121,28 @@ fun <T : GenericEvent> JDA.on(type: Class<T>) : Flux<T> {
  * ```
  */
 inline fun <reified T : GenericEvent> JDA.on() = on(T::class.java)
+
+/**
+ * Constructs an event flow using a [Flux] of the specified type.
+ *
+ * # Example
+ *
+ * ```
+ * jda.on<MessageReceivedEvent>()                // Flux<MessageReceivedEvent>
+ *    .map { it.message }                        // Flux<Message>
+ *    .filter { it.author.asTag == "Minn#6688" } // Flux<Message>
+ *    .subscribe { println("Minn#6688 said ${it.contentDisplay}") }
+ * ```
+ */
+inline fun <reified T : GenericEvent> ShardManager.on(): Flux<T> = Flux.create { sink ->
+    addEventListener(object : EventListener {
+        override fun onEvent(event: GenericEvent) {
+            if (event is T) {
+                sink.next(event)
+            }
+        }
+    })
+}
 
 inline fun <reified T : GenericEvent> ReactiveEventManager.on() = on(T::class.java)
 
