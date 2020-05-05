@@ -9,14 +9,14 @@ plugins {
 }
 
 group = "club.minnced"
-version = "1.0.0"
+version = "1.1.0"
 
 repositories {
     jcenter()
 }
 
 dependencies {
-    compileOnly("net.dv8tion:JDA:4.0.0_72")
+    compileOnly("net.dv8tion:JDA:4.1.1_143")
 
     api("io.projectreactor:reactor-core:3.2.5.RELEASE")
     implementation(kotlin("stdlib"))
