@@ -19,6 +19,7 @@ package club.minnced.jda.reactor
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import reactor.core.publisher.Flux
+import java.util.function.Consumer
 
 /**
  * Chunk the members of this guild.
@@ -29,9 +30,9 @@ import reactor.core.publisher.Flux
  * @return[Flux] Flux of members
  */
 fun Guild.streamMembers(): Flux<Member> = Flux.create { sink ->
-    val task = loadMembers {
+    val task = loadMembers(Consumer {
         sink.next(it)
-    }
+    })
 
     sink.onCancel(task::cancel)
     task.onError(sink::error)
