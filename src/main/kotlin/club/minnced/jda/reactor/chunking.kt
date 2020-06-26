@@ -18,15 +18,7 @@ package club.minnced.jda.reactor
 
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
-import net.dv8tion.jda.api.utils.data.DataObject
-import net.dv8tion.jda.internal.entities.GuildImpl
-import net.dv8tion.jda.internal.requests.WebSocketCode
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
-import reactor.core.publisher.toFlux
-import reactor.core.publisher.toMono
-import java.time.Duration
-import java.util.concurrent.TimeoutException
 
 /**
  * Chunk the members of this guild.
@@ -34,42 +26,14 @@ import java.util.concurrent.TimeoutException
  *
  * **Using this with disabled guild subscriptions is experimental and might break in the future.**
  *
- * @param[timeout] Whether the chunking process should timeout automatically
- *
  * @return[Flux] Flux of members
  */
-fun Guild.chunkMembers(timeout: Boolean = true): Flux<Member> {
-    val guild = this as GuildImpl
-
-    if (isLoaded)
-        return memberCache.toFlux()
-    else if (jda.isGuildSubscriptions)
-        return Mono.fromFuture { retrieveMembers() }.flatMapMany { memberCache.toFlux() }
-
-    //FIXME: Make this use the JDA interface instead of internals
-    val request = DataObject.empty()
-            .put("limit", 0)
-            .put("query", "")
-            .put("guild_id", getId())
-
-    val packet = DataObject.empty()
-            .put("op", WebSocketCode.MEMBER_CHUNK_REQUEST)
-            .put("d", request)
-
-    var publisher = jda.client.send(packet.toString()).toMono()
-         .flatMapMany { jda.onRaw("GUILD_MEMBERS_CHUNK") }
-         .map { it.payload }
-         .filter { it.getUnsignedLong("guild_id") == guild.idLong }
-    if (timeout) {
-        publisher = publisher.timeout(Duration.ofSeconds(10))
-                             .onErrorResume(TimeoutException::class.java) { Mono.empty() }
+fun Guild.streamMembers(): Flux<Member> = Flux.create { sink ->
+    val task = loadMembers {
+        sink.next(it)
     }
-    return publisher.takeUntil { it.getArray("members").length() < 1000 }
-                    .flatMapIterable { payload ->
-                        val members = payload.getArray("members")
-                        List(members.length()) { index ->
-                            val json = members.getObject(index)
-                            jda.entityBuilder.createMember(guild, json)
-                        }
-                    }
+
+    sink.onCancel(task::cancel)
+    task.onError(sink::error)
+    task.onSuccess { sink.complete() }
 }

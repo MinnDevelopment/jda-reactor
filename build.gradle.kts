@@ -13,10 +13,12 @@ version = "1.1.0"
 
 repositories {
     jcenter()
+    maven("https://jitpack.io")
 }
 
 dependencies {
-    compileOnly("net.dv8tion:JDA:4.1.0_97")
+//    compileOnly("net.dv8tion:JDA:4.1.0_97")
+    compileOnly("com.github.dv8fromtheworld:jda:fbda839")
 
     api("io.projectreactor:reactor-core:3.2.5.RELEASE")
     implementation(kotlin("stdlib"))
