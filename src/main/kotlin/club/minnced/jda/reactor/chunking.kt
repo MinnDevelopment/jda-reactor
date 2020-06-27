@@ -19,20 +19,20 @@ package club.minnced.jda.reactor
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import reactor.core.publisher.Flux
-import java.util.function.Consumer
 
 /**
- * Chunk the members of this guild.
- * If guild subscriptions are disabled, this will only work if raw events are enabled.
+ * Load and stream the members of this guild.
  *
- * **Using this with disabled guild subscriptions is experimental and might break in the future.**
+ * This required [GatewayIntent.GUILD_MEMBERS][net.dv8tion.jda.api.requests.GatewayIntent#GUILD_MEMBERS] to be enabled.
+ *
+ * @throws[IllegalStateException] If the GUILD_MEMBERS intent is not enabled
  *
  * @return[Flux] Flux of members
  */
 fun Guild.streamMembers(): Flux<Member> = Flux.create { sink ->
-    val task = loadMembers(Consumer {
+    val task = loadMembers {
         sink.next(it)
-    })
+    }
 
     sink.onCancel(task::cancel)
     task.onError(sink::error)
