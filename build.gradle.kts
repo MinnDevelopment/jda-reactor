@@ -9,16 +9,18 @@ plugins {
 }
 
 group = "club.minnced"
-version = "1.2.0"
+version = "1.2.1"
 
 repositories {
-    jcenter()
+    mavenLocal()
+    mavenCentral()
+    maven("https://m2.dv8tion.net/releases")
 }
 
 dependencies {
-    compileOnly("net.dv8tion:JDA:4.2.0_168")
+    compileOnly("net.dv8tion:JDA:4.2.0_DEV") // TODO: Change this to 4.2.1 release
 
-    api("io.projectreactor:reactor-core:3.2.5.RELEASE")
+    api("io.projectreactor:reactor-core:3.3.15.RELEASE")
     implementation(kotlin("stdlib"))
 }
 
