@@ -1,11 +1,9 @@
-import com.jfrog.bintray.gradle.BintrayExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `java-library`
     `maven-publish`
-    kotlin("jvm") version "1.3.21"
-    id("com.jfrog.bintray") version "1.8.4"
+    kotlin("jvm") version "1.4.32"
 }
 
 group = "club.minnced"
@@ -18,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("net.dv8tion:JDA:4.2.1_253")
+    compileOnly("net.dv8tion:JDA:4.2.1_255")
 
     api("io.projectreactor:reactor-core:3.3.15.RELEASE")
     implementation(kotlin("stdlib"))
@@ -64,43 +62,6 @@ val javadocJar = task<Jar>("javadocJar") {
     classifier = "javadoc"
 
     dependsOn(javadoc)
-}
-
-publishing {
-    publications {
-        register("BintrayRelease", MavenPublication::class) {
-            from(components["java"])
-            groupId = project.group as String
-            artifactId = project.name
-            version = project.version as String
-
-            artifact(javadocJar)
-            artifact(sourcesJar)
-        }
-    }
-}
-
-bintray {
-    setPublications("BintrayRelease")
-    user = properties["bintrayName"] as? String ?: ""
-    key  = properties["bintrayKey"] as? String ?: ""
-    pkg(delegateClosureOf<BintrayExtension.PackageConfig> {
-        setLicenses("Apache-2.0")
-        repo = "maven"
-        vcsUrl = "https://github.com/MinnDevelopment/jda-reactor"
-        githubRepo = "minndevelopment/jda-reactor"
-        issueTrackerUrl = "$vcsUrl/issues"
-        websiteUrl = vcsUrl
-        desc = "A collection of kotlin extensions for JDA that make use with reactor-core easier."
-        setLabels("reactive", "jda", "discord", "kotlin")
-        name = project.name
-        publish = true
-        publicDownloadNumbers = true
-        version(delegateClosureOf<BintrayExtension.VersionConfig> {
-            name = project.version as String
-            gpg.sign = true
-        })
-    })
 }
 
 val build: Task by tasks
