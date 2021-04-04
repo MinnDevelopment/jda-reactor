@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("net.dv8tion:JDA:4.2.0_DEV") // TODO: Change this to 4.2.1 release
+    compileOnly("net.dv8tion:JDA:4.2.1_253")
 
     api("io.projectreactor:reactor-core:3.3.15.RELEASE")
     implementation(kotlin("stdlib"))
