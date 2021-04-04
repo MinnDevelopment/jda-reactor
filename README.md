@@ -1,4 +1,4 @@
-[ ![version](https://api.bintray.com/packages/minndevelopment/maven/jda-reactor/images/download.svg) ](https://bintray.com/minndevelopment/maven/jda-reactor/_latestVersion)
+[ ![version](https://shields.io/github/v/tag/MinnDevelopment/jda-reactor) ](#Installation)
 # jda-reactor
 
 A collection of kotlin extensions for JDA that make use with reactor-core easier.
@@ -13,11 +13,13 @@ Replace the `$VERSION` with the latest release version.
 ```gradle
 dependencies {
     implementation("net.dv8tion:JDA:$JDA_VERSION")
-    implementation("club.minnced:jda-reactor:$VERSION")
+    implementation("com.github.MinnDevelopment:jda-reactor:$VERSION")
 }
 
 repositories {
-    jcenter()
+    mavenCentral()
+    maven("https://m2.dv8tion.net/releases")
+    maven("https://jitpack.io")
 }
 ```
 
@@ -30,17 +32,22 @@ repositories {
     <version>$JDA_VERSION</version>
 </dependency>
 <dependency>
-    <groupId>club.minnced</groupId>
+    <groupId>com.github.MinnDevelopment</groupId>
     <artifactId>jda-reactor</artifactId>
     <version>$VERSION</version>
 </dependency>
 ```
 
 ```xml
-<repository>
-    <name>jcenter</name>
-    <id>jcenter-bintray</id>
-    <url>https://jcenter.bintray.com</url>
+<repository> <!-- JDA -->
+    <name>m2-dv8tion</name>
+    <id>dv8tion</id>
+    <url>https://m2.dv8tion.net/releases</url>
+</repository>
+<repository> <!-- jda-reactor -->
+    <name>jitpack</name>
+    <id>jitpack</id>
+    <url>https://jitpack.io</url>
 </repository>
 ```
 
