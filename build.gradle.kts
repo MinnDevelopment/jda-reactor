@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "club.minnced"
-version = "1.2.1"
+version = "1.3.0"
 
 repositories {
     mavenLocal()
@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("net.dv8tion:JDA:4.2.1_255")
+    compileOnly("net.dv8tion:JDA:4.2.1_258")
 
     api("io.projectreactor:reactor-core:3.3.15.RELEASE")
     implementation(kotlin("stdlib"))
@@ -69,4 +69,16 @@ build.apply {
     dependsOn(javadocJar)
     dependsOn(sourcesJar)
     dependsOn(jar)
+}
+
+publishing.publications {
+    register("Release", MavenPublication::class) {
+        from(components["java"])
+        groupId = project.group as String
+        artifactId = project.name
+        version = project.version as String
+
+        artifact(javadocJar)
+        artifact(sourcesJar)
+    }
 }
