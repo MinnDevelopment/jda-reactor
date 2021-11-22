@@ -16,13 +16,13 @@
 @file:JvmName("Utils")
 package club.minnced.jda.reactor
 
-import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.core.scheduler.Scheduler
+import reactor.core.publisher.Sinks
 import java.util.concurrent.CompletionStage
 
 /**
@@ -94,17 +94,6 @@ fun <T> Iterable<CompletionStage<out T>>.asFlux(): Flux<T> {
                .flatMap { Mono.fromCompletionStage(it) }
 }
 
-/**
- * The scheduler for this JDA instance
- *
- * @throws[IllegalStateException] If this does not use [ReactiveEventManager].
- *
- * @return The scheduler
- */
-val JDA.scheduler: Scheduler get() {
-    val eventManager = this.eventManager as? ReactiveEventManager ?: throw IllegalStateException("You are not using a ReactiveEventManager!")
-    return eventManager.scheduler
-}
 
 /**
  * Make this JDABuilder use a [ReactiveEventManager]
@@ -113,7 +102,7 @@ val JDA.scheduler: Scheduler get() {
  *
  * @return The current JDABuilder for chaining
  */
-inline fun JDABuilder.reactive(block: ReactiveEventManager.Builder.() -> Unit = {}) = setEventManager(createManager(block))
+inline fun JDABuilder.reactive(sink: Sinks.Many<GenericEvent>? = null, block: ReactiveEventManager.() -> Unit = {}) = setEventManager(createManager(sink, block))
 
 /**
  * Make this DefaultShardManagerBuilder use a [ReactiveEventManager]
@@ -122,13 +111,15 @@ inline fun JDABuilder.reactive(block: ReactiveEventManager.Builder.() -> Unit = 
  *
  * @return The current DefaultShardManagerBuilder for chaining
  */
-fun DefaultShardManagerBuilder.reactive(block: ReactiveEventManager.Builder.() -> Unit = {}) = setEventManagerProvider { createManager(block) }
+fun DefaultShardManagerBuilder.reactive(sink: Sinks.Many<GenericEvent>? = null, block: ReactiveEventManager.() -> Unit = {}) = setEventManagerProvider { createManager(sink, block) }
 
 /**
  * Creates a new [ReactiveEventManager]
  *
  * @return The [ReactiveEventManager].
  */
-inline fun createManager(block: ReactiveEventManager.Builder.() -> Unit = {}): ReactiveEventManager {
-    return ReactiveEventManager.Builder().apply(block).build()
+inline fun createManager(sink: Sinks.Many<GenericEvent>? = null, block: ReactiveEventManager.() -> Unit = {}): ReactiveEventManager {
+    val manager = if (sink != null) ReactiveEventManager(sink)
+                  else ReactiveEventManager()
+    return manager.apply(block)
 }

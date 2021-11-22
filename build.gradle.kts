@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "club.minnced"
-version = "1.3.0"
+version = "1.4.0"
 
 repositories {
     mavenLocal()
@@ -16,9 +16,9 @@ repositories {
 }
 
 dependencies {
-    compileOnly("net.dv8tion:JDA:4.2.1_258")
+    compileOnly("net.dv8tion:JDA:4.3.0_248")
 
-    api("io.projectreactor:reactor-core:3.3.15.RELEASE")
+    api("io.projectreactor:reactor-core:3.4.12")
     implementation(kotlin("stdlib"))
 }
 
