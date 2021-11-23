@@ -34,11 +34,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
-public class ReactiveEventManager implements IEventManager {
+public class ReactiveEventManager implements IEventManager, Disposable {
     private static final Logger log = Loggers.getLogger(ReactiveEventManager.class);
     private final Map<EventListener, Disposable> listeners = new HashMap<>();
     private final Sinks.Many<GenericEvent> sink;
     private boolean instance = true;
+    private final Disposable reference;
 
     public ReactiveEventManager() {
         this(Sinks.many().multicast().onBackpressureBuffer());
@@ -46,6 +47,12 @@ public class ReactiveEventManager implements IEventManager {
 
     public ReactiveEventManager(@Nonnull Sinks.Many<GenericEvent> sink) {
         this.sink = sink;
+        this.reference = sink.asFlux().subscribe();
+    }
+
+    @Override
+    public void dispose() {
+        reference.dispose();
     }
 
     /**
@@ -66,8 +73,10 @@ public class ReactiveEventManager implements IEventManager {
         } catch (Throwable t) {
             sink.tryEmitNext(new ExceptionEvent(event.getJDA(), t, false));
         }
-        if (instance && event instanceof ShutdownEvent) {
-            sink.tryEmitComplete();
+        if (event instanceof ShutdownEvent) {
+            dispose();
+            if (instance)
+                sink.tryEmitComplete();
         }
     }
 
