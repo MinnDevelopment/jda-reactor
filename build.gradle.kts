@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("net.dv8tion:JDA:4.3.0_248")
+    compileOnly("net.dv8tion:JDA:4.3.0_346")
 
     api("io.projectreactor:reactor-core:3.4.12")
     implementation(kotlin("stdlib"))
