@@ -22,67 +22,140 @@ import net.dv8tion.jda.api.events.ShutdownEvent;
 import net.dv8tion.jda.api.hooks.EventListener;
 import net.dv8tion.jda.api.hooks.IEventManager;
 import reactor.core.Disposable;
-import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxProcessor;
-import reactor.core.publisher.FluxSink;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
+import reactor.core.publisher.Sinks;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
 import java.util.logging.Level;
 
-public class ReactiveEventManager implements IEventManager {
+/**
+ * Implementation if {@link IEventManager} which publishes events to a {@link Flux}.
+ *
+ * <p>This implementation provides access to event-specific flux instances with {@link #on(Class)}.
+ */
+public class ReactiveEventManager implements IEventManager, Disposable {
     private static final Logger log = Loggers.getLogger(ReactiveEventManager.class);
-    private final FluxProcessor<GenericEvent, ? super GenericEvent> processor;
-    private final Scheduler scheduler;
-    private final FluxSink<GenericEvent> eventSink;
     private final Map<EventListener, Disposable> listeners = new HashMap<>();
-
-    private boolean disposeOnShutdown = true;
+    private final Sinks.Many<GenericEvent> sink;
+    private final Disposable reference;
+    private Flux<GenericEvent> flux;
     private boolean instance = true;
 
+    /**
+     * Create a new ReactiveEventManager with custom sink and flux configuration.
+     * <br>This manager will automatically subscribe to the output flux. You can dispose this subscription with {@link #dispose()}.
+     *
+     * <p>This uses {@code Sinks.many().multicast().onBackpressureBuffer()} as the default sink.
+     *
+     * @see   #setInstance(boolean)
+     * @see   #getFlux()
+     * @see   #dispose()
+     */
     public ReactiveEventManager() {
-        this(FluxSink.OverflowStrategy.BUFFER);
-    }
-
-    public ReactiveEventManager(@Nonnull FluxSink.OverflowStrategy strategy) {
-        this(EmitterProcessor.create(), Schedulers.newSingle("JDA-EventManager", true), strategy);
-        scheduler.start();
-    }
-
-    public ReactiveEventManager(@Nonnull FluxProcessor<GenericEvent, ? super GenericEvent> processor, @Nonnull Scheduler scheduler, @Nonnull FluxSink.OverflowStrategy strategy) {
-        this.processor = processor;
-        this.scheduler = scheduler;
-        this.eventSink = processor.sink(strategy);
+        this(Sinks.many().multicast().onBackpressureBuffer());
     }
 
     /**
-     * The scheduler for this instance
+     * Create a new ReactiveEventManager with custom sink and flux configuration.
+     * <br>This manager will automatically subscribe to the output flux. You can dispose this subscription with {@link #dispose()}.
      *
-     * @return The scheduler for this instance
+     * @param sink
+     *        The {@link Sinks.Many} instance this manager should use
+     *
+     * @see   #setInstance(boolean)
+     * @see   #getFlux()
+     * @see   #dispose()
+     */
+    public ReactiveEventManager(@Nonnull Sinks.Many<GenericEvent> sink) {
+        this(sink, null);
+    }
+
+    /**
+     * Create a new ReactiveEventManager with custom sink and flux configuration.
+     * <br>This manager will automatically subscribe to the output flux. You can dispose this subscription with {@link #dispose()}.
+     *
+     * <p>This uses {@code Sinks.many().multicast().onBackpressureBuffer()} as the default sink.
+     *
+     * <h2>Example</h2>
+     * <pre>{@code
+     * val manager = ReactiveEventManager({
+     *     it.publishOn(Schedulers.elastic()
+     *       .log(customLogger, Level.INFO, true)
+     * })
+     * }</pre>
+     *
+     * @param spec
+     *        Possible further configuration for the {@link Flux} for event streaming.
+     *        This can be useful to configure a custom scheduler or log level, by default this will use {@code log(logger, Level.FINEST, true)}.
+     *
+     * @see   #setInstance(boolean)
+     * @see   #getFlux()
+     * @see   #dispose()
+     */
+    public ReactiveEventManager(@Nullable Function<? super Flux<GenericEvent>, Flux<GenericEvent>> spec) {
+        this(Sinks.many().multicast().onBackpressureBuffer(), spec);
+    }
+
+    /**
+     * Create a new ReactiveEventManager with custom sink and flux configuration.
+     * <br>This manager will automatically subscribe to the output flux. You can dispose this subscription with {@link #dispose()}.
+     *
+     * @param sink
+     *        The {@link Sinks.Many} instance this manager should use
+     * @param spec
+     *        Possible further configuration for the {@link Flux} for event streaming.
+     *        This can be useful to configure a custom scheduler or log level, by default this will use {@code log(logger, Level.FINEST, true)}.
+     *
+     * @see   #setInstance(boolean)
+     * @see   #getFlux()
+     * @see   #dispose()
+     */
+    public ReactiveEventManager(@Nonnull Sinks.Many<GenericEvent> sink, @Nullable Function<? super Flux<GenericEvent>, Flux<GenericEvent>> spec) {
+        this.sink = sink;
+        Flux<GenericEvent> tmp = sink.asFlux().log(log, Level.FINEST, true);
+        this.flux = spec == null ? tmp : spec.apply(tmp);
+        this.reference = flux.subscribe();
+    }
+
+    /**
+     * The manager automatically subscribes to any flux it publishes from.
+     * <br>This dispose implementation simply causes that subscription to get disposed.
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    public void dispose() {
+        reference.dispose();
+    }
+
+    /**
+     * The flux used for event publishing.
+     * <br>Identical to {@code on(GenericEvent.class)}
+     *
+     * @return The {@link Flux} instance
      */
     @Nonnull
-    public Scheduler getScheduler() {
-        return scheduler;
+    public Flux<GenericEvent> getFlux() {
+        return flux;
     }
 
     /**
-     * Whether to dispose of the scheduler when a {@link net.dv8tion.jda.api.events.ShutdownEvent} is received
-     * <br>Default: true
+     * Applies custom settings to the flux instance.
      *
-     * @param enabled
-     *        True, if shutdown should dispose the scheduler
+     * @param  spec
+     *         Function used to apply settings, must return updated flux instance
+     *
+     * @return Same manager instance
      */
-    public void setDisposeOnShutdown(boolean enabled) {
-        this.disposeOnShutdown = enabled;
+    @Nonnull
+    public ReactiveEventManager applySpec(@Nonnull Function<? super Flux<GenericEvent>, Flux<GenericEvent>> spec) {
+        this.flux = Objects.requireNonNull(spec.apply(flux));
+        return this;
     }
 
     /**
@@ -99,22 +172,34 @@ public class ReactiveEventManager implements IEventManager {
     @Override
     public void handle(@Nonnull GenericEvent event) {
         try {
-            eventSink.next(event);
+            sink.tryEmitNext(event);
         } catch (Throwable t) {
-            eventSink.next(new ExceptionEvent(event.getJDA(), t, false));
+            sink.tryEmitNext(new ExceptionEvent(event.getJDA(), t, false));
         }
-        if (instance && event instanceof ShutdownEvent) {
-            eventSink.complete();
-            if (disposeOnShutdown)
-                scheduler.dispose();
+        if (event instanceof ShutdownEvent) {
+            dispose();
+            if (instance)
+                sink.tryEmitComplete();
         }
     }
 
+    /**
+     * Returns a {@link Flux} instance for the specific event type.
+     * <br>Shortcut for {@code getFlux().ofType(type)}.
+     *
+     * @param  type
+     *         Class instance for the event type
+     * @param  <T>
+     *         The event type
+     *
+     * @throws NullPointerException
+     *         If null is provided
+     *
+     * @return {@link Flux}
+     */
     @Nonnull
     public <T extends GenericEvent> Flux<T> on(@Nonnull Class<T> type) {
-        return processor.publishOn(scheduler)
-                .log(log, Level.FINEST, true)
-                .ofType(type);
+        return flux.ofType(type);
     }
 
     @Override
@@ -141,153 +226,5 @@ public class ReactiveEventManager implements IEventManager {
     @Override
     public List<Object> getRegisteredListeners() {
         return new ArrayList<>(listeners.keySet());
-    }
-
-    public static class Builder {
-        private FluxProcessor<GenericEvent, ? super GenericEvent> processor;
-        private Scheduler scheduler;
-        private FluxSink.OverflowStrategy overflowStrategy;
-        private boolean instance = true, dispose = true;
-
-        /**
-         * The {@link reactor.core.publisher.FluxProcessor} to use.
-         * <br>Default: {@link reactor.core.publisher.EmitterProcessor}.
-         *
-         * @param  processor
-         *         The processor to use
-         *
-         * @return Current builder
-         */
-        @Nonnull
-        public Builder setProcessor(@Nullable FluxProcessor<GenericEvent, ? super GenericEvent> processor) {
-            this.processor = processor;
-            return this;
-        }
-
-        /**
-         * The {@link reactor.core.scheduler.Scheduler} to use.
-         * <br>Default: {@link reactor.core.scheduler.Schedulers#newSingle(String, boolean)}, daemon = true.
-         *
-         * @param  scheduler
-         *         The scheduler to use
-         *
-         * @return Current builder
-         */
-        @Nonnull
-        public Builder setScheduler(@Nullable Scheduler scheduler) {
-            this.scheduler = scheduler;
-            return this;
-        }
-
-        /**
-         * The {@link reactor.core.publisher.FluxSink.OverflowStrategy} to use.
-         * <br>Default: {@link reactor.core.publisher.FluxSink.OverflowStrategy#BUFFER}.
-         *
-         * @param  overflowStrategy
-         *         The overflow strategy
-         *
-         * @return Current builder
-         */
-        @Nonnull
-        public Builder setOverflowStrategy(@Nullable FluxSink.OverflowStrategy overflowStrategy) {
-            this.overflowStrategy = overflowStrategy;
-            return this;
-        }
-
-        /**
-         * Whether to complete the event sink when shutdown even is fired.
-         * <br>Default: True
-         *
-         * @param  instance
-         *         True, if shutdown should signal complete()
-         *
-         * @return Current builder
-         */
-        @Nonnull
-        public Builder setInstance(boolean instance) {
-            this.instance = instance;
-            return this;
-        }
-
-        /**
-         * Whether the scheduler should be disposed on shutdown.
-         *
-         * @param  dispose
-         *         True, if the shutdown should call dispose() on the scheduler
-         *
-         * @return Current builder
-         */
-        @Nonnull
-        public Builder setDispose(boolean dispose) {
-            this.dispose = dispose;
-            return this;
-        }
-
-        /**
-         * The {@link reactor.core.publisher.FluxProcessor} that was last set with {@link #setProcessor(reactor.core.publisher.FluxProcessor)}.
-         *
-         * @return The processor or null
-         */
-        @Nullable
-        public FluxProcessor<GenericEvent, ? super GenericEvent> getProcessor() {
-            return processor;
-        }
-
-        /**
-         * The {@link reactor.core.scheduler.Scheduler} that was last set with {@link #setScheduler(reactor.core.scheduler.Scheduler)}.
-         *
-         * @return The scheduler or null
-         */
-        @Nullable
-        public Scheduler getScheduler() {
-            return scheduler;
-        }
-
-        /**
-         * The {@link reactor.core.publisher.FluxSink.OverflowStrategy} that was last set with {@link #setOverflowStrategy(reactor.core.publisher.FluxSink.OverflowStrategy)}.
-         *
-         * @return The overflow strategy or null
-         */
-        @Nullable
-        public FluxSink.OverflowStrategy getOverflowStrategy() {
-            return overflowStrategy;
-        }
-
-        /**
-         * Whether the shutdown event will complete the flux sink.
-         *
-         * @return True, if the shutdown event will complete the flux sink
-         */
-        public boolean isInstance() {
-            return instance;
-        }
-
-        /**
-         * Whether the scheduler will be disposed on shutdown.
-         *
-         * @return True, if the scheduler will be disposed on shutdown.
-         */
-        public boolean isDispose() {
-            return dispose;
-        }
-
-        /**
-         * Creates a new {@link club.minnced.jda.reactor.ReactiveEventManager} instance
-         * with the specified settings.
-         *
-         * @return The {@link club.minnced.jda.reactor.ReactiveEventManager}
-         */
-        @Nonnull
-        public ReactiveEventManager build() {
-            FluxProcessor<GenericEvent, ? super GenericEvent> processor = this.processor == null ? EmitterProcessor.create() : this.processor;
-            Scheduler scheduler =  this.scheduler == null ? Schedulers.newSingle("JDA-EventManager", true) : this.scheduler;
-            FluxSink.OverflowStrategy strategy = this.overflowStrategy == null ? FluxSink.OverflowStrategy.BUFFER : this.overflowStrategy;
-            if (this.scheduler == null)
-                scheduler.start();
-            ReactiveEventManager manager = new ReactiveEventManager(processor, scheduler, strategy);
-            manager.setDisposeOnShutdown(dispose);
-            manager.setInstance(instance);
-            return manager;
-        }
     }
 }
