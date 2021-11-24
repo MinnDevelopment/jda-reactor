@@ -29,10 +29,7 @@ import reactor.util.Loggers;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.logging.Level;
 
@@ -46,7 +43,7 @@ public class ReactiveEventManager implements IEventManager, Disposable {
     private final Map<EventListener, Disposable> listeners = new HashMap<>();
     private final Sinks.Many<GenericEvent> sink;
     private final Disposable reference;
-    private final Flux<GenericEvent> flux;
+    private Flux<GenericEvent> flux;
     private boolean instance = true;
 
     /**
@@ -145,6 +142,20 @@ public class ReactiveEventManager implements IEventManager, Disposable {
     @Nonnull
     public Flux<GenericEvent> getFlux() {
         return flux;
+    }
+
+    /**
+     * Applies custom settings to the flux instance.
+     *
+     * @param  spec
+     *         Function used to apply settings, must return updated flux instance
+     *
+     * @return Same manager instance
+     */
+    @Nonnull
+    public ReactiveEventManager applySpec(@Nonnull Function<? super Flux<GenericEvent>, Flux<GenericEvent>> spec) {
+        this.flux = Objects.requireNonNull(spec.apply(flux));
+        return this;
     }
 
     /**
