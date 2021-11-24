@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Level;
 
 /**
@@ -84,6 +84,14 @@ public class ReactiveEventManager implements IEventManager, Disposable {
      *
      * <p>This uses {@code Sinks.many().multicast().onBackpressureBuffer()} as the default sink.
      *
+     * <h2>Example</h2>
+     * <pre>{@code
+     * val manager = ReactiveEventManager({
+     *     it.publishOn(Schedulers.elastic()
+     *       .log(customLogger, Level.INFO, true)
+     * })
+     * }</pre>
+     *
      * @param spec
      *        Possible further configuration for the {@link Flux} for event streaming.
      *        This can be useful to configure a custom scheduler or log level, by default this will use {@code log(logger, Level.FINEST, true)}.
@@ -92,7 +100,7 @@ public class ReactiveEventManager implements IEventManager, Disposable {
      * @see   #getFlux()
      * @see   #dispose()
      */
-    public ReactiveEventManager(@Nullable Consumer<? super Flux<GenericEvent>> spec) {
+    public ReactiveEventManager(@Nullable Function<? super Flux<GenericEvent>, Flux<GenericEvent>> spec) {
         this(Sinks.many().multicast().onBackpressureBuffer(), spec);
     }
 
@@ -110,11 +118,10 @@ public class ReactiveEventManager implements IEventManager, Disposable {
      * @see   #getFlux()
      * @see   #dispose()
      */
-    public ReactiveEventManager(@Nonnull Sinks.Many<GenericEvent> sink, @Nullable Consumer<? super Flux<GenericEvent>> spec) {
+    public ReactiveEventManager(@Nonnull Sinks.Many<GenericEvent> sink, @Nullable Function<? super Flux<GenericEvent>, Flux<GenericEvent>> spec) {
         this.sink = sink;
-        this.flux = sink.asFlux().log(log, Level.FINEST, true);
-        if (spec != null)
-            spec.accept(flux);
+        Flux<GenericEvent> tmp = sink.asFlux().log(log, Level.FINEST, true);
+        this.flux = spec == null ? tmp : spec.apply(tmp);
         this.reference = flux.subscribe();
     }
 
