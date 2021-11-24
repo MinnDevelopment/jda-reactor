@@ -28,31 +28,116 @@ import reactor.util.Logger;
 import reactor.util.Loggers;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 
+/**
+ * Implementation if {@link IEventManager} which publishes events to a {@link Flux}.
+ *
+ * <p>This implementation provides access to event-specific flux instances with {@link #on(Class)}.
+ */
 public class ReactiveEventManager implements IEventManager, Disposable {
     private static final Logger log = Loggers.getLogger(ReactiveEventManager.class);
     private final Map<EventListener, Disposable> listeners = new HashMap<>();
     private final Sinks.Many<GenericEvent> sink;
-    private boolean instance = true;
     private final Disposable reference;
+    private final Flux<GenericEvent> flux;
+    private boolean instance = true;
 
+    /**
+     * Create a new ReactiveEventManager with custom sink and flux configuration.
+     * <br>This manager will automatically subscribe to the output flux. You can dispose this subscription with {@link #dispose()}.
+     *
+     * <p>This uses {@code Sinks.many().multicast().onBackpressureBuffer()} as the default sink.
+     *
+     * @see   #setInstance(boolean)
+     * @see   #getFlux()
+     * @see   #dispose()
+     */
     public ReactiveEventManager() {
         this(Sinks.many().multicast().onBackpressureBuffer());
     }
 
+    /**
+     * Create a new ReactiveEventManager with custom sink and flux configuration.
+     * <br>This manager will automatically subscribe to the output flux. You can dispose this subscription with {@link #dispose()}.
+     *
+     * @param sink
+     *        The {@link Sinks.Many} instance this manager should use
+     *
+     * @see   #setInstance(boolean)
+     * @see   #getFlux()
+     * @see   #dispose()
+     */
     public ReactiveEventManager(@Nonnull Sinks.Many<GenericEvent> sink) {
-        this.sink = sink;
-        this.reference = sink.asFlux().subscribe();
+        this(sink, null);
     }
 
+    /**
+     * Create a new ReactiveEventManager with custom sink and flux configuration.
+     * <br>This manager will automatically subscribe to the output flux. You can dispose this subscription with {@link #dispose()}.
+     *
+     * <p>This uses {@code Sinks.many().multicast().onBackpressureBuffer()} as the default sink.
+     *
+     * @param spec
+     *        Possible further configuration for the {@link Flux} for event streaming.
+     *        This can be useful to configure a custom scheduler or log level, by default this will use {@code log(logger, Level.FINEST, true)}.
+     *
+     * @see   #setInstance(boolean)
+     * @see   #getFlux()
+     * @see   #dispose()
+     */
+    public ReactiveEventManager(@Nullable Consumer<? super Flux<GenericEvent>> spec) {
+        this(Sinks.many().multicast().onBackpressureBuffer(), spec);
+    }
+
+    /**
+     * Create a new ReactiveEventManager with custom sink and flux configuration.
+     * <br>This manager will automatically subscribe to the output flux. You can dispose this subscription with {@link #dispose()}.
+     *
+     * @param sink
+     *        The {@link Sinks.Many} instance this manager should use
+     * @param spec
+     *        Possible further configuration for the {@link Flux} for event streaming.
+     *        This can be useful to configure a custom scheduler or log level, by default this will use {@code log(logger, Level.FINEST, true)}.
+     *
+     * @see   #setInstance(boolean)
+     * @see   #getFlux()
+     * @see   #dispose()
+     */
+    public ReactiveEventManager(@Nonnull Sinks.Many<GenericEvent> sink, @Nullable Consumer<? super Flux<GenericEvent>> spec) {
+        this.sink = sink;
+        this.flux = sink.asFlux().log(log, Level.FINEST, true);
+        if (spec != null)
+            spec.accept(flux);
+        this.reference = flux.subscribe();
+    }
+
+    /**
+     * The manager automatically subscribes to any flux it publishes from.
+     * <br>This dispose implementation simply causes that subscription to get disposed.
+     *
+     * {@inheritDoc}
+     */
     @Override
     public void dispose() {
         reference.dispose();
+    }
+
+    /**
+     * The flux used for event publishing.
+     * <br>Identical to {@code on(GenericEvent.class)}
+     *
+     * @return The {@link Flux} instance
+     */
+    @Nonnull
+    public Flux<GenericEvent> getFlux() {
+        return flux;
     }
 
     /**
@@ -80,11 +165,23 @@ public class ReactiveEventManager implements IEventManager, Disposable {
         }
     }
 
+    /**
+     * Returns a {@link Flux} instance for the specific event type.
+     * <br>Shortcut for {@code getFlux().ofType(type)}.
+     *
+     * @param  type
+     *         Class instance for the event type
+     * @param  <T>
+     *         The event type
+     *
+     * @throws NullPointerException
+     *         If null is provided
+     *
+     * @return {@link Flux}
+     */
     @Nonnull
     public <T extends GenericEvent> Flux<T> on(@Nonnull Class<T> type) {
-        return sink.asFlux()
-                .log(log, Level.FINEST, true)
-                .ofType(type);
+        return flux.ofType(type);
     }
 
     @Override
