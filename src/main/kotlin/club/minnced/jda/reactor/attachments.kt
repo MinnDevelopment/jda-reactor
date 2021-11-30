@@ -73,7 +73,7 @@ fun Message.Attachment.toByteArray(): Mono<ByteArray> {
                        buffer.toByteArray()
                    }
                }
-               .subscribeOn(Schedulers.elastic())
+               .subscribeOn(Schedulers.boundedElastic())
 }
 
 /**
@@ -107,7 +107,7 @@ fun Message.Attachment.toFile(path: String? = null, file: File? = null): Mono<Fi
             file != null -> downloadToFile(file)
             else -> downloadToFile()
         }
-    }.subscribeOn(Schedulers.elastic())
+    }.subscribeOn(Schedulers.boundedElastic())
 }
 
 /**
