@@ -6,7 +6,7 @@ A collection of kotlin extensions for JDA that make use with reactor-core easier
 ## Installation
 
 Replace the `$VERSION` with the latest release version.
-<br>Replace `$JDA_VERSION` with the latest stable JDA v4 release.
+<br>Replace `$JDA_VERSION` with the latest stable JDA v5 release.
 
 ### Gradle
 
@@ -18,7 +18,6 @@ dependencies {
 
 repositories {
     mavenCentral()
-    maven("https://m2.dv8tion.net/releases")
     maven("https://jitpack.io")
 }
 ```
@@ -39,11 +38,6 @@ repositories {
 ```
 
 ```xml
-<repository> <!-- JDA -->
-    <name>m2-dv8tion</name>
-    <id>dv8tion</id>
-    <url>https://m2.dv8tion.net/releases</url>
-</repository>
 <repository> <!-- jda-reactor -->
     <name>jitpack</name>
     <id>jitpack</id>
@@ -148,8 +142,8 @@ fun onNameChange(user: User): Flux<String> {
                .map { it.newName }        // Flux<String>
 }
 
-fun onNameChange(channel: VoiceChannel): Flux<String> {
-    return channel.onUpdate<VoiceChannelUpdateNameEvent>() // Flux<VoiceChannelUpdateNameEvent>
+fun onNameChange(channel: GuildChannel): Flux<String> {
+    return channel.onUpdate<ChannelUpdateNameEvent>() // Flux<ChannelUpdateNameEvent>
                   .map { it.newName }                      // Flux<String>
 }
 ```

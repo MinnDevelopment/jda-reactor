@@ -7,16 +7,15 @@ plugins {
 }
 
 group = "club.minnced"
-version = "1.4.0"
+version = "1.5.0"
 
 repositories {
     mavenLocal()
     mavenCentral()
-    maven("https://m2.dv8tion.net/releases")
 }
 
 dependencies {
-    compileOnly("net.dv8tion:JDA:4.3.0_346")
+    compileOnly("net.dv8tion:JDA:5.0.0-alpha.1")
 
     api("io.projectreactor:reactor-core:3.4.12")
     implementation(kotlin("stdlib"))
@@ -72,7 +71,7 @@ build.apply {
 }
 
 publishing.publications {
-    register("Release", MavenPublication::class) {
+    register<MavenPublication>("Release") {
         from(components["java"])
         groupId = project.group as String
         artifactId = project.name

@@ -20,9 +20,7 @@ import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.*
 import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.events.RawGatewayEvent
-import net.dv8tion.jda.api.events.channel.category.update.GenericCategoryUpdateEvent
-import net.dv8tion.jda.api.events.channel.text.update.GenericTextChannelUpdateEvent
-import net.dv8tion.jda.api.events.channel.voice.update.GenericVoiceChannelUpdateEvent
+import net.dv8tion.jda.api.events.channel.update.GenericChannelUpdateEvent
 import net.dv8tion.jda.api.events.guild.GenericGuildEvent
 import net.dv8tion.jda.api.events.guild.member.GenericGuildMemberEvent
 import net.dv8tion.jda.api.events.guild.update.GenericGuildUpdateEvent
@@ -68,25 +66,11 @@ fun <T : GenericGuildMemberEvent> Member.on(type: Class<T>): Flux<T> {
 
  // Channel Updates
 
-inline fun <reified T : GenericTextChannelUpdateEvent<*>> TextChannel.onUpdate() = onUpdate(T::class.java)
+inline fun <reified T : GenericChannelUpdateEvent<*>> Channel.onUpdate() = onUpdate(T::class.java)
 
-fun <T : GenericTextChannelUpdateEvent<*>> TextChannel.onUpdate(type: Class<T>): Flux<T> {
+fun <T : GenericChannelUpdateEvent<*>> Channel.onUpdate(type: Class<T>): Flux<T> {
     val id = this.idLong
     return jda.on(type).filter { it.channel.idLong == id }
-}
-
-inline fun <reified T : GenericVoiceChannelUpdateEvent<*>> VoiceChannel.onUpdate() = onUpdate(T::class.java)
-
-fun <T : GenericVoiceChannelUpdateEvent<*>> VoiceChannel.onUpdate(type: Class<T>): Flux<T> {
-    val id = this.idLong
-    return jda.on(type).filter { it.channel.idLong == id }
-}
-
-inline fun <reified T : GenericCategoryUpdateEvent<*>> Category.onUpdate() = onUpdate(T::class.java)
-
-fun <T : GenericCategoryUpdateEvent<*>> Category.onUpdate(type: Class<T>): Flux<T> {
-    val id = this.idLong
-    return jda.on(type).filter { it.category.idLong == id }
 }
 
  // Message events
