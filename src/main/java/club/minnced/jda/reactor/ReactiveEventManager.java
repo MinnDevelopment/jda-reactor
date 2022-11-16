@@ -26,9 +26,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 import reactor.util.Logger;
 import reactor.util.Loggers;
-import reactor.util.annotation.NonNull;
-import reactor.util.annotation.Nullable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -52,9 +52,9 @@ public class ReactiveEventManager implements IEventManager, Disposable {
      *
      * <p>This uses {@code Sinks.many().multicast().onBackpressureBuffer()} as the default sink.
      *
-     * @see   #setInstance(boolean)
-     * @see   #getFlux()
-     * @see   #dispose()
+     * @see #setInstance(boolean)
+     * @see #getFlux()
+     * @see #dispose()
      */
     public ReactiveEventManager() {
         this(Sinks.many().multicast().onBackpressureBuffer());
@@ -64,14 +64,12 @@ public class ReactiveEventManager implements IEventManager, Disposable {
      * Create a new ReactiveEventManager with custom sink and flux configuration.
      * <br>This manager will automatically subscribe to the output flux. You can dispose this subscription with {@link #dispose()}.
      *
-     * @param sink
-     *        The {@link Sinks.Many} instance this manager should use
-     *
-     * @see   #setInstance(boolean)
-     * @see   #getFlux()
-     * @see   #dispose()
+     * @param sink The {@link Sinks.Many} instance this manager should use
+     * @see #setInstance(boolean)
+     * @see #getFlux()
+     * @see #dispose()
      */
-    public ReactiveEventManager(@NonNull Sinks.Many<GenericEvent> sink) {
+    public ReactiveEventManager(@Nonnull Sinks.Many<GenericEvent> sink) {
         this(sink, null);
     }
 
@@ -89,13 +87,11 @@ public class ReactiveEventManager implements IEventManager, Disposable {
      * })
      * }</pre>
      *
-     * @param spec
-     *        Possible further configuration for the {@link Flux} for event streaming.
-     *        This can be useful to configure a custom scheduler or log level, by default this will use {@code log(logger, Level.FINEST, true)}.
-     *
-     * @see   #setInstance(boolean)
-     * @see   #getFlux()
-     * @see   #dispose()
+     * @param spec Possible further configuration for the {@link Flux} for event streaming.
+     *             This can be useful to configure a custom scheduler or log level, by default this will use {@code log(logger, Level.FINEST, true)}.
+     * @see #setInstance(boolean)
+     * @see #getFlux()
+     * @see #dispose()
      */
     public ReactiveEventManager(@Nullable Function<? super Flux<GenericEvent>, Flux<GenericEvent>> spec) {
         this(Sinks.many().multicast().onBackpressureBuffer(), spec);
@@ -105,17 +101,14 @@ public class ReactiveEventManager implements IEventManager, Disposable {
      * Create a new ReactiveEventManager with custom sink and flux configuration.
      * <br>This manager will automatically subscribe to the output flux. You can dispose this subscription with {@link #dispose()}.
      *
-     * @param sink
-     *        The {@link Sinks.Many} instance this manager should use
-     * @param spec
-     *        Possible further configuration for the {@link Flux} for event streaming.
-     *        This can be useful to configure a custom scheduler or log level, by default this will use {@code log(logger, Level.FINEST, true)}.
-     *
-     * @see   #setInstance(boolean)
-     * @see   #getFlux()
-     * @see   #dispose()
+     * @param sink The {@link Sinks.Many} instance this manager should use
+     * @param spec Possible further configuration for the {@link Flux} for event streaming.
+     *             This can be useful to configure a custom scheduler or log level, by default this will use {@code log(logger, Level.FINEST, true)}.
+     * @see #setInstance(boolean)
+     * @see #getFlux()
+     * @see #dispose()
      */
-    public ReactiveEventManager(@NonNull Sinks.Many<GenericEvent> sink, @Nullable Function<? super Flux<GenericEvent>, Flux<GenericEvent>> spec) {
+    public ReactiveEventManager(@Nonnull Sinks.Many<GenericEvent> sink, @Nullable Function<? super Flux<GenericEvent>, Flux<GenericEvent>> spec) {
         this.sink = sink;
         Flux<GenericEvent> tmp = sink.asFlux().log(log, Level.FINEST, true);
         this.flux = spec == null ? tmp : spec.apply(tmp);
@@ -125,7 +118,7 @@ public class ReactiveEventManager implements IEventManager, Disposable {
     /**
      * The manager automatically subscribes to any flux it publishes from.
      * <br>This dispose implementation simply causes that subscription to get disposed.
-     *
+     * <p>
      * {@inheritDoc}
      */
     @Override
@@ -139,7 +132,7 @@ public class ReactiveEventManager implements IEventManager, Disposable {
      *
      * @return The {@link Flux} instance
      */
-    @NonNull
+    @Nonnull
     public Flux<GenericEvent> getFlux() {
         return flux;
     }
@@ -147,13 +140,11 @@ public class ReactiveEventManager implements IEventManager, Disposable {
     /**
      * Applies custom settings to the flux instance.
      *
-     * @param  spec
-     *         Function used to apply settings, must return updated flux instance
-     *
+     * @param spec Function used to apply settings, must return updated flux instance
      * @return Same manager instance
      */
-    @NonNull
-    public ReactiveEventManager applySpec(@NonNull Function<? super Flux<GenericEvent>, Flux<GenericEvent>> spec) {
+    @Nonnull
+    public ReactiveEventManager applySpec(@Nonnull Function<? super Flux<GenericEvent>, Flux<GenericEvent>> spec) {
         this.flux = Objects.requireNonNull(spec.apply(flux));
         return this;
     }
@@ -162,15 +153,14 @@ public class ReactiveEventManager implements IEventManager, Disposable {
      * Whether the sink of this instance should be completed by a {@link net.dv8tion.jda.api.events.session.ShutdownEvent}.
      * <br>Default: true
      *
-     * @param enabled
-     *        True, if shutdown should complete the sink
+     * @param enabled True, if shutdown should complete the sink
      */
     public void setInstance(boolean enabled) {
         this.instance = enabled;
     }
 
     @Override
-    public void handle(@NonNull GenericEvent event) {
+    public void handle(@Nonnull GenericEvent event) {
         try {
             sink.tryEmitNext(event);
         } catch (Throwable t) {
@@ -187,42 +177,35 @@ public class ReactiveEventManager implements IEventManager, Disposable {
      * Returns a {@link Flux} instance for the specific event type.
      * <br>Shortcut for {@code getFlux().ofType(type)}.
      *
-     * @param  type
-     *         Class instance for the event type
-     * @param  <T>
-     *         The event type
-     *
-     * @throws NullPointerException
-     *         If null is provided
-     *
+     * @param type Class instance for the event type
+     * @param <T>  The event type
      * @return {@link Flux}
+     * @throws NullPointerException If null is provided
      */
-    @NonNull
-    public <T extends GenericEvent> Flux<T> on(@NonNull Class<T> type) {
+    @Nonnull
+    public <T extends GenericEvent> Flux<T> on(@Nonnull Class<T> type) {
         return flux.ofType(type);
     }
 
     @Override
-    public void register(@NonNull Object listener) {
+    public void register(@Nonnull Object listener) {
         if (listener instanceof EventListener) {
             EventListener eventListener = (EventListener) listener;
             Disposable disposable = on(GenericEvent.class).subscribe(eventListener::onEvent);
             listeners.put(eventListener, disposable);
-        }
-        else throw new UnsupportedOperationException();
+        } else throw new UnsupportedOperationException();
     }
 
     @Override
-    public void unregister(@NonNull Object listener) {
+    public void unregister(@Nonnull Object listener) {
         if (listener instanceof EventListener) {
             Disposable disposable = listeners.remove(listener);
             if (disposable != null)
                 disposable.dispose();
-        }
-        else throw new UnsupportedOperationException();
+        } else throw new UnsupportedOperationException();
     }
 
-    @NonNull
+    @Nonnull
     @Override
     public List<Object> getRegisteredListeners() {
         return new ArrayList<>(listeners.keySet());
