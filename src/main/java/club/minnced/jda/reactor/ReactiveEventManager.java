@@ -18,7 +18,7 @@ package club.minnced.jda.reactor;
 
 import net.dv8tion.jda.api.events.ExceptionEvent;
 import net.dv8tion.jda.api.events.GenericEvent;
-import net.dv8tion.jda.api.events.ShutdownEvent;
+import net.dv8tion.jda.api.events.session.ShutdownEvent;
 import net.dv8tion.jda.api.hooks.EventListener;
 import net.dv8tion.jda.api.hooks.IEventManager;
 import reactor.core.Disposable;
@@ -26,9 +26,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 import reactor.util.Logger;
 import reactor.util.Loggers;
+import reactor.util.annotation.NonNull;
+import reactor.util.annotation.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -71,7 +71,7 @@ public class ReactiveEventManager implements IEventManager, Disposable {
      * @see   #getFlux()
      * @see   #dispose()
      */
-    public ReactiveEventManager(@Nonnull Sinks.Many<GenericEvent> sink) {
+    public ReactiveEventManager(@NonNull Sinks.Many<GenericEvent> sink) {
         this(sink, null);
     }
 
@@ -115,7 +115,7 @@ public class ReactiveEventManager implements IEventManager, Disposable {
      * @see   #getFlux()
      * @see   #dispose()
      */
-    public ReactiveEventManager(@Nonnull Sinks.Many<GenericEvent> sink, @Nullable Function<? super Flux<GenericEvent>, Flux<GenericEvent>> spec) {
+    public ReactiveEventManager(@NonNull Sinks.Many<GenericEvent> sink, @Nullable Function<? super Flux<GenericEvent>, Flux<GenericEvent>> spec) {
         this.sink = sink;
         Flux<GenericEvent> tmp = sink.asFlux().log(log, Level.FINEST, true);
         this.flux = spec == null ? tmp : spec.apply(tmp);
@@ -139,7 +139,7 @@ public class ReactiveEventManager implements IEventManager, Disposable {
      *
      * @return The {@link Flux} instance
      */
-    @Nonnull
+    @NonNull
     public Flux<GenericEvent> getFlux() {
         return flux;
     }
@@ -152,14 +152,14 @@ public class ReactiveEventManager implements IEventManager, Disposable {
      *
      * @return Same manager instance
      */
-    @Nonnull
-    public ReactiveEventManager applySpec(@Nonnull Function<? super Flux<GenericEvent>, Flux<GenericEvent>> spec) {
+    @NonNull
+    public ReactiveEventManager applySpec(@NonNull Function<? super Flux<GenericEvent>, Flux<GenericEvent>> spec) {
         this.flux = Objects.requireNonNull(spec.apply(flux));
         return this;
     }
 
     /**
-     * Whether the sink of this instance should be completed by a {@link net.dv8tion.jda.api.events.ShutdownEvent}.
+     * Whether the sink of this instance should be completed by a {@link net.dv8tion.jda.api.events.session.ShutdownEvent}.
      * <br>Default: true
      *
      * @param enabled
@@ -170,7 +170,7 @@ public class ReactiveEventManager implements IEventManager, Disposable {
     }
 
     @Override
-    public void handle(@Nonnull GenericEvent event) {
+    public void handle(@NonNull GenericEvent event) {
         try {
             sink.tryEmitNext(event);
         } catch (Throwable t) {
@@ -197,13 +197,13 @@ public class ReactiveEventManager implements IEventManager, Disposable {
      *
      * @return {@link Flux}
      */
-    @Nonnull
-    public <T extends GenericEvent> Flux<T> on(@Nonnull Class<T> type) {
+    @NonNull
+    public <T extends GenericEvent> Flux<T> on(@NonNull Class<T> type) {
         return flux.ofType(type);
     }
 
     @Override
-    public void register(@Nonnull Object listener) {
+    public void register(@NonNull Object listener) {
         if (listener instanceof EventListener) {
             EventListener eventListener = (EventListener) listener;
             Disposable disposable = on(GenericEvent.class).subscribe(eventListener::onEvent);
@@ -213,7 +213,7 @@ public class ReactiveEventManager implements IEventManager, Disposable {
     }
 
     @Override
-    public void unregister(@Nonnull Object listener) {
+    public void unregister(@NonNull Object listener) {
         if (listener instanceof EventListener) {
             Disposable disposable = listeners.remove(listener);
             if (disposable != null)
@@ -222,7 +222,7 @@ public class ReactiveEventManager implements IEventManager, Disposable {
         else throw new UnsupportedOperationException();
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public List<Object> getRegisteredListeners() {
         return new ArrayList<>(listeners.keySet());
