@@ -90,7 +90,7 @@ fun <T> RestAction<out Iterable<T>>.toFlux() : Flux<T> = asMono().flatMapIterabl
  *        The OverflowStrategy to apply (default [LATEST][FluxSink.OverflowStrategy.LATEST])
  */
 fun <T, M> PaginationAction<T, M>.asFlux(overflowStrategy: FluxSink.OverflowStrategy = FluxSink.OverflowStrategy.LATEST) : Flux<T>
-    where M : PaginationAction<T, M> = Flux.create<T>({ sink ->
+    where M : PaginationAction<T, M> = Flux.create({ sink ->
     cache(false)
     var task: CompletionStage<*> = CompletableFuture.completedFuture(null)
     val remaining = AtomicLong(0)
@@ -112,7 +112,7 @@ fun <T, M> PaginationAction<T, M>.asFlux(overflowStrategy: FluxSink.OverflowStra
             task = task.thenCompose {
                 when {
                     // If completed or disposed, do nothing
-                    done || remaining.get() <= 0 -> CompletableFuture.completedFuture<Void>(null)
+                    done || remaining.get() <= 0 -> CompletableFuture.completedFuture(null)
 
                     // Collect remaining supply from pagination
                     else -> forEachRemainingAsync {

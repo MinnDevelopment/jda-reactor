@@ -31,7 +31,7 @@ import java.nio.charset.Charset
  */
 fun Message.Attachment.toInputStream(): Mono<InputStream> {
     return toByteArray()
-            .map<InputStream> { ByteArrayInputStream(it) }
+            .map { ByteArrayInputStream(it) }
 }
 
 /**
