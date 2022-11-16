@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     `java-library`
     `maven-publish`
-    kotlin("jvm") version "1.4.32"
+    kotlin("jvm") version "1.7.20"
 }
 
 group = "club.minnced"
@@ -21,7 +21,7 @@ dependencies {
     implementation(kotlin("stdlib"))
 }
 
-configure<JavaPluginConvention> {
+configure<JavaPluginExtension> {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
@@ -53,12 +53,16 @@ javadoc.apply {
 
 val sourcesJar = task<Jar>("sourcesJar") {
     from(sourceSets["main"].allSource)
-    classifier = "sources"
+
+    archiveClassifier.convention("sources")
+    archiveClassifier.set("sources")
 }
 
 val javadocJar = task<Jar>("javadocJar") {
     from(javadoc.destinationDir)
-    classifier = "javadoc"
+
+    archiveClassifier.convention("javadoc")
+    archiveClassifier.set("javadoc")
 
     dependsOn(javadoc)
 }
