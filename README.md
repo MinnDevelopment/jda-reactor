@@ -131,7 +131,7 @@ fun onNextMessage(channel: MessageChannel, callback: (Message) -> Unit) {
 
 fun onReaction(message: Message, reaction: String): Flux<User> {
     return message.on<MessageReactionAddEvent>()                // Flux<MessageReactionAddEvent>
-                  .filter { it.reactionEmote.name == reaction } // Flux<MessageReactionAddEvent> with filter
+                  .filter { it.emoji.name == reaction }         // Flux<MessageReactionAddEvent> with filter
                   .map { it.user }                              // Flux<User>
 }
 ```
@@ -139,12 +139,12 @@ fun onReaction(message: Message, reaction: String): Flux<User> {
 ```kotlin
 fun onNameChange(user: User): Flux<String> {
     return user.on<UserUpdateNameEvent>() // Flux<UserUpdateNameEvent>
-               .map { it.newName }        // Flux<String>
+               .map { it.newValue }       // Flux<String>
 }
 
 fun onNameChange(channel: GuildChannel): Flux<String> {
     return channel.onUpdate<ChannelUpdateNameEvent>() // Flux<ChannelUpdateNameEvent>
-                  .map { it.newName }                      // Flux<String>
+                  .map { it.newValue }                // Flux<String>
 }
 ```
 

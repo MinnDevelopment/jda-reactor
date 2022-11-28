@@ -18,7 +18,7 @@ package club.minnced.jda.reactor
 
 import net.dv8tion.jda.api.utils.cache.CacheView
 import reactor.core.publisher.Flux
-import reactor.core.publisher.toFlux
+import reactor.kotlin.core.publisher.toFlux
 
 /**
  * Creates a Flux using [CacheView.lockedIterator] and closes it after usage.

@@ -65,7 +65,7 @@ fun Message.Attachment.toLines(): Flux<String> {
  * @return[Mono]
  */
 fun Message.Attachment.toByteArray(): Mono<ByteArray> {
-    return Mono.fromFuture { retrieveInputStream() }
+    return Mono.fromFuture { proxy.download() }
                .map {
                    it.use { source ->
                        val buffer =  ByteArrayOutputStream()
@@ -103,9 +103,9 @@ fun Message.Attachment.toText(charset: Charset = Charsets.UTF_8): Mono<String> {
 fun Message.Attachment.toFile(path: String? = null, file: File? = null): Mono<File> {
     return Mono.fromFuture {
         when {
-            path != null -> downloadToFile(path)
-            file != null -> downloadToFile(file)
-            else -> downloadToFile()
+            path != null -> proxy.downloadToFile(File(path))
+            file != null -> proxy.downloadToFile(file)
+            else -> proxy.downloadToFile(File(fileName))
         }
     }.subscribeOn(Schedulers.boundedElastic())
 }

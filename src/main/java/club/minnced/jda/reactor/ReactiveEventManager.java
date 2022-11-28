@@ -18,7 +18,7 @@ package club.minnced.jda.reactor;
 
 import net.dv8tion.jda.api.events.ExceptionEvent;
 import net.dv8tion.jda.api.events.GenericEvent;
-import net.dv8tion.jda.api.events.ShutdownEvent;
+import net.dv8tion.jda.api.events.session.ShutdownEvent;
 import net.dv8tion.jda.api.hooks.EventListener;
 import net.dv8tion.jda.api.hooks.IEventManager;
 import reactor.core.Disposable;
@@ -159,7 +159,7 @@ public class ReactiveEventManager implements IEventManager, Disposable {
     }
 
     /**
-     * Whether the sink of this instance should be completed by a {@link net.dv8tion.jda.api.events.ShutdownEvent}.
+     * Whether the sink of this instance should be completed by a {@link ShutdownEvent}.
      * <br>Default: true
      *
      * @param enabled

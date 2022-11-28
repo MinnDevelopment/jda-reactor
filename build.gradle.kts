@@ -3,11 +3,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     `java-library`
     `maven-publish`
-    kotlin("jvm") version "1.4.32"
+    kotlin("jvm") version "1.7.20"
 }
 
 group = "club.minnced"
-version = "1.5.0"
+version = "1.6.0"
 
 repositories {
     mavenLocal()
@@ -15,9 +15,11 @@ repositories {
 }
 
 dependencies {
-    compileOnly("net.dv8tion:JDA:5.0.0-alpha.1")
+    compileOnly("com.google.code.findbugs:jsr305:3.0.2")
+    compileOnly("net.dv8tion:JDA:5.0.0-beta.1")
 
-    api("io.projectreactor:reactor-core:3.4.12")
+    api("io.projectreactor:reactor-core:3.5.0")
+    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions:1.2.0")
     implementation(kotlin("stdlib"))
 }
 
@@ -41,9 +43,9 @@ javadoc.apply {
         val opt = options as StandardJavadocDocletOptions
         opt.author()
         opt.links(
-            "https://projectreactor.io/docs/core/3.1.2.RELEASE/api/",
+            "https://projectreactor.io/docs/core/3.5.0.RELEASE/api/",
             "https://docs.oracle.com/javase/8/docs/api/",
-            "https://ci.dv8tion.net/job/JDA/javadoc")
+            "https://ci.dv8tion.net/job/JDA5/javadoc")
         if (JavaVersion.current().isJava9Compatible) {
             opt.addBooleanOption("html5", true)
             opt.addStringOption("-release", "8")
